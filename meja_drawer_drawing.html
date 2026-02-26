@@ -464,14 +464,15 @@ function drawTopView(d) {
     const pd = d.pullD * scale;
     const pcx = ox + sw / 2 - pw / 2;
     const pcy = oy + sl - pd;
-    // Rounded cutout
-    const r = Math.min(pd, pw / 4);
-    const cutPath = `M${pcx},${oy + sl} L${pcx},${pcy + r} Q${pcx},${pcy} ${pcx + r},${pcy} L${pcx + pw - r},${pcy} Q${pcx + pw},${pcy} ${pcx + pw},${pcy + r} L${pcx + pw},${oy + sl}`;
+    const r = Math.min(1 * scale, pd * 0.35, pw / 4); // R1" radius scaled
+    // U-shape with rounded corners and curved bottom
+    const curveDepth = pd * 0.15; // how much the bottom curves down in center
+    const cutPath = `M${pcx},${oy + sl} L${pcx},${pcy + r} A${r},${r} 0 0 1 ${pcx + r},${pcy} Q${ox + sw / 2},${pcy - curveDepth} ${pcx + pw - r},${pcy} A${r},${r} 0 0 1 ${pcx + pw},${pcy + r} L${pcx + pw},${oy + sl}`;
     svg.appendChild(svgEl('path', { d: cutPath, class: 'cutout-fill' }));
 
     // Label
     const lbl = svgEl('text', {
-      x: ox + sw / 2, y: pcy - 3,
+      x: ox + sw / 2, y: pcy - curveDepth - 3,
       class: 'feature-label'
     });
     lbl.textContent = 'PULL CUTOUT';
@@ -560,65 +561,50 @@ function drawFrontView(d) {
   });
 
   const ox = margin, oy = margin;
+  const bottomRaise = 0.5 * scale; // bottom panel raised 1/2" from bottom edge (dado groove)
 
-  // Outer rectangle
+  // Outer rectangle (front face - solid, visible)
   svg.appendChild(svgEl('rect', {
     x: ox, y: oy, width: sw, height: sh,
     class: 'outline-thick fill-light'
   }));
 
-  // Inner cavity visible from front (between side walls)
-  svg.appendChild(svgEl('rect', {
-    x: ox + st, y: oy, width: sw - st * 2, height: sh - st,
-    class: 'outline fill-inner'
+  // --- HIDDEN LINES (dashed, lighter - features behind front face) ---
+
+  // Side wall thickness lines (hidden behind front panel)
+  // Left side wall inner edge
+  svg.appendChild(svgEl('line', {
+    x1: ox + st, y1: oy, x2: ox + st, y2: oy + sh,
+    class: 'outline-dashed'
+  }));
+  // Right side wall inner edge
+  svg.appendChild(svgEl('line', {
+    x1: ox + sw - st, y1: oy, x2: ox + sw - st, y2: oy + sh,
+    class: 'outline-dashed'
   }));
 
-  // Wall cross-sections (left and right sides)
-  // Left wall
-  svg.appendChild(svgEl('rect', {
-    x: ox, y: oy, width: st, height: sh,
-    class: 'outline fill-side'
+  // Bottom panel (raised - sits in dado groove)
+  // Top edge of bottom panel
+  svg.appendChild(svgEl('line', {
+    x1: ox, y1: oy + sh - bottomRaise - st,
+    x2: ox + sw, y2: oy + sh - bottomRaise - st,
+    class: 'outline-dashed'
   }));
-  // Hatch lines for left wall
-  for (let i = 0; i < sh; i += 4) {
-    svg.appendChild(svgEl('line', {
-      x1: ox, y1: oy + i, x2: ox + Math.min(st, i + st), y2: oy + Math.max(0, i - st + st),
-      stroke: '#c9b99a', 'stroke-width': 0.3
-    }));
-  }
-
-  // Right wall
-  svg.appendChild(svgEl('rect', {
-    x: ox + sw - st, y: oy, width: st, height: sh,
-    class: 'outline fill-side'
+  // Bottom edge of bottom panel (where dado groove starts)
+  svg.appendChild(svgEl('line', {
+    x1: ox, y1: oy + sh - bottomRaise,
+    x2: ox + sw, y2: oy + sh - bottomRaise,
+    class: 'outline-dashed'
   }));
 
-  // Bottom
-  svg.appendChild(svgEl('rect', {
-    x: ox, y: oy + sh - st, width: sw, height: st,
-    class: 'outline fill-side'
-  }));
-
-  // Dovetail markers on top corners
-  const dtH = Math.min(sh * 0.12, 8);
-  for (let n = 0; n < 3; n++) {
-    const yy = oy + dtH * n * 2.2 + 4;
-    if (yy + dtH > oy + sh) break;
-    // Left
-    const ldPath = `M${ox},${yy} l${st * 0.6},${dtH * 0.3} l0,${dtH * 0.4} l${-st * 0.6},${dtH * 0.3}`;
-    svg.appendChild(svgEl('path', { d: ldPath, class: 'dovetail-line' }));
-    // Right
-    const rdPath = `M${ox + sw},${yy} l${-st * 0.6},${dtH * 0.3} l0,${dtH * 0.4} l${st * 0.6},${dtH * 0.3}`;
-    svg.appendChild(svgEl('path', { d: rdPath, class: 'dovetail-line' }));
-  }
-
-  // Pull cutout on front face
+  // Pull cutout on front face (U-shape with R1" corners and curved bottom)
   if (d.pullCutout) {
     const pw = d.pullW * scale;
     const pd = d.pullD * scale;
     const pcx = ox + sw / 2 - pw / 2;
-    const r = Math.min(pd * 0.6, pw / 4);
-    const cutPath = `M${pcx},${oy} L${pcx},${oy + pd - r} Q${pcx},${oy + pd} ${pcx + r},${oy + pd} L${pcx + pw - r},${oy + pd} Q${pcx + pw},${oy + pd} ${pcx + pw},${oy + pd - r} L${pcx + pw},${oy}`;
+    const r = Math.min(1 * scale, pd * 0.35, pw / 4); // R1" radius
+    const curveDepth = pd * 0.15; // curved bottom dip
+    const cutPath = `M${pcx},${oy} L${pcx},${oy + pd - r} A${r},${r} 0 0 0 ${pcx + r},${oy + pd} Q${ox + sw / 2},${oy + pd + curveDepth} ${pcx + pw - r},${oy + pd} A${r},${r} 0 0 0 ${pcx + pw},${oy + pd - r} L${pcx + pw},${oy}`;
     svg.appendChild(svgEl('path', { d: cutPath, class: 'cutout-fill' }));
 
     // Pull dim
@@ -641,18 +627,25 @@ function drawFrontView(d) {
     svg.appendChild(lbl);
   }
 
-  // Undermount notches (bottom corners)
+  // Undermount notches (on back wall - hidden, shown as dashed)
   if (d.undermountNotch) {
     const nw = 2.5 * scale;
     const nh = 0.5 * scale;
     svg.appendChild(svgEl('rect', {
       x: ox, y: oy + sh - nh, width: nw, height: nh,
-      class: 'notch-fill'
+      fill: 'none', stroke: '#999', 'stroke-width': 0.5, 'stroke-dasharray': '3,2'
     }));
     svg.appendChild(svgEl('rect', {
       x: ox + sw - nw, y: oy + sh - nh, width: nw, height: nh,
-      class: 'notch-fill'
+      fill: 'none', stroke: '#999', 'stroke-width': 0.5, 'stroke-dasharray': '3,2'
     }));
+    // Label
+    const nlbl = svgEl('text', {
+      x: ox + sw / 2, y: oy + sh - nh - 2,
+      class: 'feature-label', 'font-size': '6px', fill: '#999'
+    });
+    nlbl.textContent = 'UNDERMOUNT NOTCHES (HIDDEN)';
+    svg.appendChild(nlbl);
   }
 
   // Dimensions
@@ -660,6 +653,14 @@ function drawFrontView(d) {
   dimLine(svg, ox + sw, oy, ox + sw, oy + sh, fmtDim(d.H), 18, 'right');
   // Thickness
   dimLine(svg, ox, oy + sh, ox + st, oy + sh, fmtDim(d.T), 10, 'bottom');
+
+  // Bottom raise dimension
+  const brLabel = svgEl('text', {
+    x: ox + sw - st - 4, y: oy + sh - bottomRaise / 2,
+    class: 'dim-text dim-text-small', 'text-anchor': 'end', fill: '#999'
+  });
+  brLabel.textContent = 'RAISED BOTTOM';
+  svg.appendChild(brLabel);
 
   container.appendChild(svg);
 }
@@ -873,27 +874,119 @@ function drawIsoView(d) {
     }));
   }
 
-  // Dovetail markers on visible corners
-  const dtCount = Math.min(Math.floor(d.H / 2), 4);
-  for (let i = 0; i < dtCount; i++) {
-    const z1 = (i * 2 + 0.5) * scale + st;
-    const z2 = z1 + scale * 0.8;
-    if (z2 > sh) break;
+  // Realistic dovetail joints - SIDE FACE ONLY
+  (function() {
+    // Calculate dovetail pattern based on box height
+    var numTails = Math.max(2, Math.min(6, Math.round(d.H / 1.8)));
+    var pinRatio = 0.45;
+    var halfPinRatio = 0.35;
+    var totalUnits = numTails + (numTails - 1) * pinRatio + 2 * halfPinRatio;
+    var tailH = sh / totalUnits;
+    var pinH = tailH * pinRatio;
+    var halfPinH = tailH * halfPinRatio;
+    var taper = tailH * 0.13;
 
-    // Front-left corner dovetails
-    const dt = [iso(sw, sl, z1), iso(sw, sl + st * 0.5, z1 + (z2 - z1) * 0.2), iso(sw, sl + st * 0.5, z2 - (z2 - z1) * 0.2), iso(sw, sl, z2)];
-    svg.appendChild(svgEl('polygon', {
-      points: dt.map(p => p.join(',')).join(' '),
-      fill: 'none', stroke: '#8B4513', 'stroke-width': 0.6
+    var endGrain = '#c9a96e';
+    var dtStroke = '#8B6914';
+    var endGrainDark = '#b8985a';
+
+    // Build pin positions (pins from front/back wall visible on side face)
+    // Layout from bottom: halfpin, tail, pin, tail, pin, ..., tail, halfpin
+    var pinZs = [];
+    var z = halfPinH; // after bottom half-pin
+    for (var ti = 0; ti < numTails - 1; ti++) {
+      z += tailH; // skip tail
+      pinZs.push([z, z + pinH]);
+      z += pinH;
+    }
+    // Half-pin positions
+    var halfPinZs = [[0, halfPinH], [sh - halfPinH, sh]];
+
+    // ---- LEFT SIDE FACE (y=sl) - FRONT CORNER (near x=sw) ----
+    // Pins from FRONT wall end grain visible on side face
+    for (var i = 0; i < pinZs.length; i++) {
+      var pz1 = pinZs[i][0], pz2 = pinZs[i][1];
+      var pinPoly = [
+        iso(sw, sl, pz1 + taper),
+        iso(sw, sl, pz2 - taper),
+        iso(sw - st, sl, pz2),
+        iso(sw - st, sl, pz1)
+      ];
+      svg.appendChild(svgEl('polygon', {
+        points: pinPoly.map(function(p){return p.join(',')}).join(' '),
+        fill: endGrain, stroke: dtStroke, 'stroke-width': 0.6
+      }));
+    }
+    // Half-pins at front corner of side face
+    for (var h = 0; h < halfPinZs.length; h++) {
+      var hz1 = halfPinZs[h][0], hz2 = halfPinZs[h][1];
+      var hp = [
+        iso(sw, sl, hz1 + (h === 0 ? 0 : taper * 0.4)),
+        iso(sw, sl, hz2 - (h === 0 ? taper * 0.4 : 0)),
+        iso(sw - st, sl, hz2),
+        iso(sw - st, sl, hz1)
+      ];
+      svg.appendChild(svgEl('polygon', {
+        points: hp.map(function(p){return p.join(',')}).join(' '),
+        fill: endGrain, stroke: dtStroke, 'stroke-width': 0.5
+      }));
+    }
+
+    // ---- LEFT SIDE FACE (y=sl) - BACK CORNER (near x=0) ----
+    // Pins from BACK wall end grain visible on side face
+    for (var j = 0; j < pinZs.length; j++) {
+      var bpz1 = pinZs[j][0], bpz2 = pinZs[j][1];
+      var bPinPoly = [
+        iso(0, sl, bpz1 + taper),
+        iso(0, sl, bpz2 - taper),
+        iso(st, sl, bpz2),
+        iso(st, sl, bpz1)
+      ];
+      svg.appendChild(svgEl('polygon', {
+        points: bPinPoly.map(function(p){return p.join(',')}).join(' '),
+        fill: endGrainDark, stroke: dtStroke, 'stroke-width': 0.5
+      }));
+    }
+    // Half-pins at back corner of side face
+    for (var bh = 0; bh < halfPinZs.length; bh++) {
+      var bhz1 = halfPinZs[bh][0], bhz2 = halfPinZs[bh][1];
+      var bhp = [
+        iso(0, sl, bhz1 + (bh === 0 ? 0 : taper * 0.4)),
+        iso(0, sl, bhz2 - (bh === 0 ? taper * 0.4 : 0)),
+        iso(st, sl, bhz2),
+        iso(st, sl, bhz1)
+      ];
+      svg.appendChild(svgEl('polygon', {
+        points: bhp.map(function(p){return p.join(',')}).join(' '),
+        fill: endGrainDark, stroke: dtStroke, 'stroke-width': 0.5
+      }));
+    }
+
+    // ---- Joint lines at corners (vertical seam) ----
+    // Front-left corner
+    var cFL1 = iso(sw, sl, 0), cFL2 = iso(sw, sl, sh);
+    svg.appendChild(svgEl('line', {
+      x1: cFL1[0], y1: cFL1[1], x2: cFL2[0], y2: cFL2[1],
+      stroke: '#6B4E1B', 'stroke-width': 0.8
     }));
-
     // Back-left corner
-    const dt2 = [iso(0, sl, z1), iso(0, sl + st * 0.5, z1 + (z2 - z1) * 0.2), iso(0, sl + st * 0.5, z2 - (z2 - z1) * 0.2), iso(0, sl, z2)];
-    svg.appendChild(svgEl('polygon', {
-      points: dt2.map(p => p.join(',')).join(' '),
-      fill: 'none', stroke: '#8B4513', 'stroke-width': 0.6
+    var cBL1 = iso(0, sl, 0), cBL2 = iso(0, sl, sh);
+    svg.appendChild(svgEl('line', {
+      x1: cBL1[0], y1: cBL1[1], x2: cBL2[0], y2: cBL2[1],
+      stroke: '#6B4E1B', 'stroke-width': 0.6
     }));
-  }
+    // Front-side seam lines for pin edges
+    var cFS1 = iso(sw - st, sl, 0), cFS2 = iso(sw - st, sl, sh);
+    svg.appendChild(svgEl('line', {
+      x1: cFS1[0], y1: cFS1[1], x2: cFS2[0], y2: cFS2[1],
+      stroke: dtStroke, 'stroke-width': 0.3
+    }));
+    var cBS1 = iso(st, sl, 0), cBS2 = iso(st, sl, sh);
+    svg.appendChild(svgEl('line', {
+      x1: cBS1[0], y1: cBS1[1], x2: cBS2[0], y2: cBS2[1],
+      stroke: dtStroke, 'stroke-width': 0.3
+    }));
+  })();
 
   // Dimension lines for iso view
   // Width along front bottom
