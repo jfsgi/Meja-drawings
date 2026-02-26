@@ -331,7 +331,7 @@ function svgEl(tag, attrs) {
   return el;
 }
 
-// Helper: dimension line with arrows and text
+// Helper: dimension line with arrows and text (line breaks around text)
 function dimLine(svg, x1, y1, x2, y2, label, offset, side, name) {
   // side: 'top','bottom','left','right' determines offset direction
   // name: optional dimension name label (e.g. 'WIDTH', 'HEIGHT')
@@ -349,34 +349,43 @@ function dimLine(svg, x1, y1, x2, y2, label, offset, side, name) {
   g.appendChild(svgEl('line', { x1, y1, x2: lx1, y2: ly1, class: 'dim-line' }));
   g.appendChild(svgEl('line', { x1: x2, y1: y2, x2: lx2, y2: ly2, class: 'dim-line' }));
 
-  // Main dim line
-  g.appendChild(svgEl('line', { x1: lx1, y1: ly1, x2: lx2, y2: ly2, class: 'dim-line' }));
-
-  // Arrows
-  const arrowSize = 2;
   const dx = lx2 - lx1, dy = ly2 - ly1;
   const len = Math.sqrt(dx * dx + dy * dy);
+
+  // Calculate text gap size based on wider of label or name
+  const textLen = Math.max(label.length, name ? name.length : 0);
+  const gapHalf = Math.max(12, textLen * 3.5);
+
   if (len > 0) {
     const ux = dx / len, uy = dy / len;
     const px = -uy, py = ux;
+    const mx = (lx1 + lx2) / 2, my = (ly1 + ly2) / 2;
+
+    // Break main dim line around text center
+    const gx = ux * gapHalf, gy = uy * gapHalf;
+    g.appendChild(svgEl('line', { x1: lx1, y1: ly1, x2: mx - gx, y2: my - gy, class: 'dim-line' }));
+    g.appendChild(svgEl('line', { x1: mx + gx, y1: my + gy, x2: lx2, y2: ly2, class: 'dim-line' }));
+
+    // Arrows at each end
+    const arrowSize = 3.5;
     // Arrow at start
     g.appendChild(svgEl('polygon', {
-      points: `${lx1},${ly1} ${lx1 + ux * arrowSize + px * arrowSize * 0.4},${ly1 + uy * arrowSize + py * arrowSize * 0.4} ${lx1 + ux * arrowSize - px * arrowSize * 0.4},${ly1 + uy * arrowSize - py * arrowSize * 0.4}`,
+      points: `${lx1},${ly1} ${lx1 + ux * arrowSize + px * arrowSize * 0.35},${ly1 + uy * arrowSize + py * arrowSize * 0.35} ${lx1 + ux * arrowSize - px * arrowSize * 0.35},${ly1 + uy * arrowSize - py * arrowSize * 0.35}`,
       class: 'dim-arrow'
     }));
     // Arrow at end
     g.appendChild(svgEl('polygon', {
-      points: `${lx2},${ly2} ${lx2 - ux * arrowSize + px * arrowSize * 0.4},${ly2 - uy * arrowSize + py * arrowSize * 0.4} ${lx2 - ux * arrowSize - px * arrowSize * 0.4},${ly2 - uy * arrowSize - py * arrowSize * 0.4}`,
+      points: `${lx2},${ly2} ${lx2 - ux * arrowSize + px * arrowSize * 0.35},${ly2 - uy * arrowSize + py * arrowSize * 0.35} ${lx2 - ux * arrowSize - px * arrowSize * 0.35},${ly2 - uy * arrowSize - py * arrowSize * 0.35}`,
       class: 'dim-arrow'
     }));
   }
 
-  // Text
+  // Text in the gap
   const tx = (lx1 + lx2) / 2, ty = (ly1 + ly2) / 2;
   const isVertical = (side === 'left' || side === 'right');
   const txt = svgEl('text', {
     x: tx,
-    y: ty - 2,
+    y: name ? ty - 3 : ty - 1,
     class: 'dim-text'
   });
   txt.textContent = label;
@@ -385,8 +394,8 @@ function dimLine(svg, x1, y1, x2, y2, label, offset, side, name) {
   // Optional dimension name label
   if (name) {
     const nameTxt = svgEl('text', {
-      x: isVertical ? tx : tx,
-      y: isVertical ? ty + 9 : ty + 8,
+      x: tx,
+      y: ty + 7,
       class: 'dim-text dim-text-small'
     });
     nameTxt.textContent = name;
