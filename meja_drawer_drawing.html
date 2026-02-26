@@ -203,9 +203,12 @@
 <body>
 
 <div class="header">
-  <div>
-    <h1>MEJA DESIGNS</h1>
-    <div class="subtitle">Custom Drawer Box - Technical Drawing</div>
+  <div style="display:flex;align-items:center;gap:12px">
+    <img src="meja_logo.png" alt="MEJA Designs" style="height:44px;width:auto">
+    <div>
+      <h1>MEJA DESIGNS</h1>
+      <div class="subtitle">Custom Drawer Box - Technical Drawing</div>
+    </div>
   </div>
   <div style="text-align:right">
     <div id="dateDisplay" style="font-size:12px;opacity:0.7"></div>
@@ -575,12 +578,65 @@ function drawFrontView(d) {
 
   const ox = margin, oy = margin;
   const bottomRaise = 0.5 * scale; // bottom panel raised 1/2" from bottom edge (dado groove)
+  const scoopFrontSD = d.scoopFront ? d.scoopD * scale : 0;
+  const frontWallTop = oy + scoopFrontSD; // top of the front wall (lower when scooped)
 
-  // Outer rectangle (front face - solid, visible)
-  svg.appendChild(svgEl('rect', {
-    x: ox, y: oy, width: sw, height: sh,
-    class: 'outline-thick fill-light'
-  }));
+  if (d.scoopFront) {
+    // Full box outline (side/back walls at full height)
+    svg.appendChild(svgEl('rect', {
+      x: ox, y: oy, width: sw, height: sh,
+      class: 'outline-thick', fill: 'none'
+    }));
+
+    // Front wall fill (lower portion only)
+    svg.appendChild(svgEl('rect', {
+      x: ox, y: frontWallTop, width: sw, height: sh - scoopFrontSD,
+      class: 'fill-light', stroke: 'none'
+    }));
+
+    // Interior visible above front wall (back wall face)
+    svg.appendChild(svgEl('rect', {
+      x: ox + st, y: oy, width: sw - 2 * st, height: scoopFrontSD,
+      fill: '#fff8ee', stroke: 'none'
+    }));
+
+    // Side walls extending above front wall (full height strips)
+    svg.appendChild(svgEl('rect', {
+      x: ox, y: oy, width: st, height: scoopFrontSD,
+      fill: '#e8dcc8', stroke: '#666', 'stroke-width': 0.5
+    }));
+    svg.appendChild(svgEl('rect', {
+      x: ox + sw - st, y: oy, width: st, height: scoopFrontSD,
+      fill: '#e8dcc8', stroke: '#666', 'stroke-width': 0.5
+    }));
+
+    // Front wall top edge (prominent line)
+    svg.appendChild(svgEl('line', {
+      x1: ox + st, y1: frontWallTop,
+      x2: ox + sw - st, y2: frontWallTop,
+      stroke: '#333', 'stroke-width': 1.5
+    }));
+
+    // Re-draw outer box outline on top
+    svg.appendChild(svgEl('rect', {
+      x: ox, y: oy, width: sw, height: sh,
+      class: 'outline-thick', fill: 'none'
+    }));
+
+    // Scoop label
+    var scoopLbl = svgEl('text', {
+      x: ox + sw / 2, y: oy + scoopFrontSD / 2 + 3,
+      class: 'feature-label'
+    });
+    scoopLbl.textContent = 'SCOOP';
+    svg.appendChild(scoopLbl);
+  } else {
+    // Outer rectangle (front face - solid, visible)
+    svg.appendChild(svgEl('rect', {
+      x: ox, y: oy, width: sw, height: sh,
+      class: 'outline-thick fill-light'
+    }));
+  }
 
   // --- HIDDEN LINES (dashed, lighter - features behind front face) ---
 
@@ -615,30 +671,17 @@ function drawFrontView(d) {
     const pw = d.pullW * scale;
     const pd = d.pullD * scale;
     const pcx = ox + sw / 2 - pw / 2;
+    const pTop = frontWallTop; // top of front wall (adjusted for scoop)
     const r = Math.min(1 * scale, pd * 0.35, pw / 4); // R1" radius
     const curveDepth = pd * 0.15; // curved bottom dip
-    const cutPath = `M${pcx},${oy} L${pcx},${oy + pd - r} A${r},${r} 0 0 0 ${pcx + r},${oy + pd} Q${ox + sw / 2},${oy + pd + curveDepth} ${pcx + pw - r},${oy + pd} A${r},${r} 0 0 0 ${pcx + pw},${oy + pd - r} L${pcx + pw},${oy}`;
+    const cutPath = `M${pcx},${pTop} L${pcx},${pTop + pd - r} A${r},${r} 0 0 0 ${pcx + r},${pTop + pd} Q${ox + sw / 2},${pTop + pd + curveDepth} ${pcx + pw - r},${pTop + pd} A${r},${r} 0 0 0 ${pcx + pw},${pTop + pd - r} L${pcx + pw},${pTop}`;
     svg.appendChild(svgEl('path', { d: cutPath, class: 'cutout-fill' }));
 
     // Pull dim
-    dimLine(svg, pcx, oy, pcx + pw, oy, fmtDim(d.pullW), -3, 'top');
+    dimLine(svg, pcx, pTop, pcx + pw, pTop, fmtDim(d.pullW), -3, 'top');
   }
 
-  // Scoop front (arc on front face)
-  if (d.scoopFront) {
-    const sd = d.scoopD * scale;
-    const scoopW = (sw - st * 2) * 0.8;
-    const scx = ox + sw / 2 - scoopW / 2;
-    const scoopPath = `M${scx},${oy} Q${ox + sw / 2},${oy + sd} ${scx + scoopW},${oy}`;
-    svg.appendChild(svgEl('path', { d: scoopPath, class: 'scoop-fill' }));
-
-    const lbl = svgEl('text', {
-      x: ox + sw / 2, y: oy + sd + 8,
-      class: 'feature-label'
-    });
-    lbl.textContent = 'SCOOP';
-    svg.appendChild(lbl);
-  }
+  // Scoop front rendering is handled in the initial rectangle section above
 
   // Undermount notches (on back wall - hidden, shown as dashed)
   if (d.undermountNotch) {
@@ -724,8 +767,8 @@ function drawIsoView(d) {
   var scoopSD = d.scoopFront ? d.scoopD * scale : 0;
   var frontH = d.scoopFront ? sh - scoopSD : sh;
   function scoopZ(xPos) {
-    if (!d.scoopFront || xPos / sw < 0.35) return sh;
-    var u = (xPos / sw - 0.35) / 0.65;
+    if (!d.scoopFront || xPos / sw < 0.5) return sh;
+    var u = (xPos / sw - 0.5) / 0.5;
     return sh - scoopSD * (1 - Math.cos(u * Math.PI / 2));
   }
 
