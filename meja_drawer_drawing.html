@@ -1091,6 +1091,37 @@ function drawIsoView(d) {
     }));
   })();
 
+  // Wall labels (FRONT, BACK, SIDE)
+  var frontCenter = iso(sw, sl / 2, frontH / 2);
+  var frontLbl = svgEl('text', {
+    x: frontCenter[0], y: frontCenter[1],
+    class: 'feature-label', 'font-size': '10px', fill: '#555',
+    'text-anchor': 'middle',
+    transform: 'rotate(-30,' + frontCenter[0] + ',' + frontCenter[1] + ')'
+  });
+  frontLbl.textContent = 'FRONT';
+  svg.appendChild(frontLbl);
+
+  var backCenter = iso(0, sl / 2, sh / 2);
+  var backLbl = svgEl('text', {
+    x: backCenter[0], y: backCenter[1],
+    class: 'feature-label', 'font-size': '10px', fill: '#888',
+    'text-anchor': 'middle',
+    transform: 'rotate(-30,' + backCenter[0] + ',' + backCenter[1] + ')'
+  });
+  backLbl.textContent = 'BACK';
+  svg.appendChild(backLbl);
+
+  var sideCenter = iso(sw / 2, sl, sh / 2);
+  var sideLbl = svgEl('text', {
+    x: sideCenter[0], y: sideCenter[1],
+    class: 'feature-label', 'font-size': '10px', fill: '#555',
+    'text-anchor': 'middle',
+    transform: 'rotate(30,' + sideCenter[0] + ',' + sideCenter[1] + ')'
+  });
+  sideLbl.textContent = 'SIDE';
+  svg.appendChild(sideLbl);
+
   // Dimension lines for iso view
   // Width along front bottom (y-axis = Width after swap)
   const dw1 = iso(sw, 0, 0), dw2 = iso(sw, sl, 0);
