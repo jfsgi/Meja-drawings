@@ -329,8 +329,9 @@ function svgEl(tag, attrs) {
 }
 
 // Helper: dimension line with arrows and text
-function dimLine(svg, x1, y1, x2, y2, label, offset, side) {
+function dimLine(svg, x1, y1, x2, y2, label, offset, side, name) {
   // side: 'top','bottom','left','right' determines offset direction
+  // name: optional dimension name label (e.g. 'WIDTH', 'HEIGHT')
   const g = svgEl('g');
   let ox = 0, oy = 0;
   if (side === 'top') oy = -offset;
@@ -369,6 +370,7 @@ function dimLine(svg, x1, y1, x2, y2, label, offset, side) {
 
   // Text
   const tx = (lx1 + lx2) / 2, ty = (ly1 + ly2) / 2;
+  const isVertical = (side === 'left' || side === 'right');
   const txt = svgEl('text', {
     x: tx,
     y: ty - 2,
@@ -376,6 +378,17 @@ function dimLine(svg, x1, y1, x2, y2, label, offset, side) {
   });
   txt.textContent = label;
   g.appendChild(txt);
+
+  // Optional dimension name label
+  if (name) {
+    const nameTxt = svgEl('text', {
+      x: isVertical ? tx : tx,
+      y: isVertical ? ty + 9 : ty + 8,
+      class: 'dim-text dim-text-small'
+    });
+    nameTxt.textContent = name;
+    g.appendChild(nameTxt);
+  }
 
   svg.appendChild(g);
 }
@@ -503,11 +516,11 @@ function drawTopView(d) {
   }
 
   // Dimension lines
-  dimLine(svg, ox, oy, ox + sw, oy, fmtDim(d.W), 18, 'top');
-  dimLine(svg, ox, oy, ox, oy + sl, fmtDim(d.L), 18, 'left');
+  dimLine(svg, ox, oy, ox + sw, oy, fmtDim(d.W), 18, 'top', 'WIDTH');
+  dimLine(svg, ox, oy, ox, oy + sl, fmtDim(d.L), 18, 'left', 'LENGTH');
 
   // Thickness dimension
-  dimLine(svg, ox, oy + sl + 3, ox + st, oy + sl + 3, fmtDim(d.T), 8, 'bottom');
+  dimLine(svg, ox, oy + sl + 3, ox + st, oy + sl + 3, fmtDim(d.T), 8, 'bottom', 'THICKNESS');
 
   // Labels
   const topLabel = svgEl('text', {
@@ -649,10 +662,10 @@ function drawFrontView(d) {
   }
 
   // Dimensions
-  dimLine(svg, ox, oy, ox + sw, oy, fmtDim(d.W), 18, 'top');
-  dimLine(svg, ox + sw, oy, ox + sw, oy + sh, fmtDim(d.H), 18, 'right');
+  dimLine(svg, ox, oy, ox + sw, oy, fmtDim(d.W), 18, 'top', 'WIDTH');
+  dimLine(svg, ox + sw, oy, ox + sw, oy + sh, fmtDim(d.H), 18, 'right', 'HEIGHT');
   // Thickness
-  dimLine(svg, ox, oy + sh, ox + st, oy + sh, fmtDim(d.T), 10, 'bottom');
+  dimLine(svg, ox, oy + sh, ox + st, oy + sh, fmtDim(d.T), 10, 'bottom', 'THICKNESS');
 
   // Bottom raise dimension
   const brLabel = svgEl('text', {
@@ -684,7 +697,9 @@ function drawIsoView(d) {
   const cos30 = Math.cos(Math.PI / 6); // 0.866
   const sin30 = 0.5;
 
-  const sw = d.W * scale, sl = d.L * scale, sh = d.H * scale;
+  // NOTE: x-axis = Length (depth, front-to-back), y-axis = Width (side-to-side)
+  // This ensures the front face shows Width and the side face shows Length
+  const sw = d.L * scale, sl = d.W * scale, sh = d.H * scale;
   const st = d.T * scale;
 
   // Project 3D point to 2D isometric
@@ -989,7 +1004,7 @@ function drawIsoView(d) {
   })();
 
   // Dimension lines for iso view
-  // Width along front bottom
+  // Width along front bottom (y-axis = Width after swap)
   const dw1 = iso(sw, 0, 0), dw2 = iso(sw, sl, 0);
   const dwm1 = [dw1[0] + 15, dw1[1] + 8];
   const dwm2 = [dw2[0] + 15, dw2[1] + 8];
@@ -1003,8 +1018,15 @@ function drawIsoView(d) {
   });
   wLabel.textContent = fmtDim(d.W);
   svg.appendChild(wLabel);
+  const wName = svgEl('text', {
+    x: (dwm1[0] + dwm2[0]) / 2 + 8,
+    y: (dwm1[1] + dwm2[1]) / 2 + 8,
+    class: 'dim-text dim-text-small'
+  });
+  wName.textContent = 'WIDTH';
+  svg.appendChild(wName);
 
-  // Length along right bottom
+  // Length along right bottom (x-axis = Length after swap)
   const dl1 = iso(sw, 0, 0), dl2 = iso(0, 0, 0);
   const dlm1 = [dl1[0] + 15, dl1[1] + 8];
   const dlm2 = [dl2[0] + 15, dl2[1] + 8];
@@ -1018,6 +1040,13 @@ function drawIsoView(d) {
   });
   lLabel.textContent = fmtDim(d.L);
   svg.appendChild(lLabel);
+  const lName = svgEl('text', {
+    x: (dlm1[0] + dlm2[0]) / 2 + 8,
+    y: (dlm1[1] + dlm2[1]) / 2 + 8,
+    class: 'dim-text dim-text-small'
+  });
+  lName.textContent = 'LENGTH';
+  svg.appendChild(lName);
 
   // Height along front-left vertical
   const dh1 = iso(sw, sl, 0), dh2 = iso(sw, sl, sh);
@@ -1033,6 +1062,14 @@ function drawIsoView(d) {
   });
   hLabel.textContent = fmtDim(d.H);
   svg.appendChild(hLabel);
+  const hName = svgEl('text', {
+    x: dh1[0] + dhOff + 4,
+    y: (dh1[1] + dh2[1]) / 2 + 10,
+    class: 'dim-text dim-text-small',
+    'text-anchor': 'start'
+  });
+  hName.textContent = 'HEIGHT';
+  svg.appendChild(hName);
 
   container.appendChild(svg);
 }
