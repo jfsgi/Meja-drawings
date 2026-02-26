@@ -523,7 +523,7 @@ function drawTopView(d) {
   dimLine(svg, ox, oy, ox, oy + sl, fmtDim(d.L), 18, 'left', 'LENGTH');
 
   // Thickness dimension
-  dimLine(svg, ox, oy + sl + 3, ox + st, oy + sl + 3, fmtDim(d.T), 8, 'bottom', 'THICKNESS');
+  dimLine(svg, ox, oy + sl + 3, ox + st, oy + sl + 3, fmtDim(d.T), 20, 'bottom', 'THICKNESS');
 
   // Labels
   const topLabel = svgEl('text', {
@@ -708,7 +708,7 @@ function drawFrontView(d) {
   dimLine(svg, ox, oy, ox + sw, oy, fmtDim(d.W), 18, 'top', 'WIDTH');
   dimLine(svg, ox + sw, oy, ox + sw, oy + sh, fmtDim(d.H), 18, 'right', 'HEIGHT');
   // Thickness
-  dimLine(svg, ox, oy + sh, ox + st, oy + sh, fmtDim(d.T), 10, 'bottom', 'THICKNESS');
+  dimLine(svg, ox, oy + sh, ox + st, oy + sh, fmtDim(d.T), 22, 'bottom', 'THICKNESS');
 
   // Bottom raise dimension
   const brLabel = svgEl('text', {
