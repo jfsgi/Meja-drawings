@@ -720,6 +720,15 @@ function drawIsoView(d) {
     preserveAspectRatio: 'xMidYMid meet'
   });
 
+  // Scoop profile calculation
+  var scoopSD = d.scoopFront ? d.scoopD * scale : 0;
+  var frontH = d.scoopFront ? sh - scoopSD : sh;
+  function scoopZ(xPos) {
+    if (!d.scoopFront || xPos / sw < 0.35) return sh;
+    var u = (xPos / sw - 0.35) / 0.65;
+    return sh - scoopSD * (1 - Math.cos(u * Math.PI / 2));
+  }
+
   // Bottom face (floor of box)
   const bf = [iso(0, 0, 0), iso(sw, 0, 0), iso(sw, sl, 0), iso(0, sl, 0)];
   svg.appendChild(svgEl('polygon', {
@@ -734,22 +743,44 @@ function drawIsoView(d) {
     fill: '#ddd0b8', stroke: '#333', 'stroke-width': 1
   }));
 
-  // Left wall (the width-facing wall on left)
-  const lw = [iso(0, sl, 0), iso(sw, sl, 0), iso(sw, sl, sh), iso(0, sl, sh)];
-  svg.appendChild(svgEl('polygon', {
-    points: lw.map(p => p.join(',')).join(' '),
-    fill: '#c9b99a', stroke: '#333', 'stroke-width': 1
-  }));
+  // Left wall (visible side wall - follows scoop profile)
+  (function() {
+    var pts = [iso(0, sl, 0), iso(sw, sl, 0)];
+    if (d.scoopFront) {
+      var numPts = 24;
+      for (var i = numPts; i >= 0; i--) {
+        pts.push(iso((i / numPts) * sw, sl, scoopZ((i / numPts) * sw)));
+      }
+    } else {
+      pts.push(iso(sw, sl, sh));
+      pts.push(iso(0, sl, sh));
+    }
+    svg.appendChild(svgEl('polygon', {
+      points: pts.map(function(p) { return p.join(','); }).join(' '),
+      fill: '#c9b99a', stroke: '#333', 'stroke-width': 1
+    }));
+  })();
 
-  // Right wall
-  const rw = [iso(0, 0, 0), iso(sw, 0, 0), iso(sw, 0, sh), iso(0, 0, sh)];
-  svg.appendChild(svgEl('polygon', {
-    points: rw.map(p => p.join(',')).join(' '),
-    fill: '#d4c4a8', stroke: '#333', 'stroke-width': 0.5, 'stroke-dasharray': '3,2'
-  }));
+  // Right wall (hidden - follows scoop profile)
+  (function() {
+    var pts = [iso(0, 0, 0), iso(sw, 0, 0)];
+    if (d.scoopFront) {
+      var numPts = 24;
+      for (var i = numPts; i >= 0; i--) {
+        pts.push(iso((i / numPts) * sw, 0, scoopZ((i / numPts) * sw)));
+      }
+    } else {
+      pts.push(iso(sw, 0, sh));
+      pts.push(iso(0, 0, sh));
+    }
+    svg.appendChild(svgEl('polygon', {
+      points: pts.map(function(p) { return p.join(','); }).join(' '),
+      fill: '#d4c4a8', stroke: '#333', 'stroke-width': 0.5, 'stroke-dasharray': '3,2'
+    }));
+  })();
 
-  // Front wall
-  const fw = [iso(sw, 0, 0), iso(sw, sl, 0), iso(sw, sl, sh), iso(sw, 0, sh)];
+  // Front wall (shorter when scooped)
+  const fw = [iso(sw, 0, 0), iso(sw, sl, 0), iso(sw, sl, frontH), iso(sw, 0, frontH)];
   svg.appendChild(svgEl('polygon', {
     points: fw.map(p => p.join(',')).join(' '),
     fill: '#f0e6d2', stroke: '#333', 'stroke-width': 1
@@ -769,12 +800,24 @@ function drawIsoView(d) {
     fill: '#efe5d0', stroke: '#666', 'stroke-width': 0.5
   }));
 
-  // Inner left wall
-  const ilw = [iso(st, sl - st, st), iso(sw - st, sl - st, st), iso(sw - st, sl - st, sh), iso(st, sl - st, sh)];
-  svg.appendChild(svgEl('polygon', {
-    points: ilw.map(p => p.join(',')).join(' '),
-    fill: '#e5d8c0', stroke: '#666', 'stroke-width': 0.5
-  }));
+  // Inner left wall (follows scoop profile)
+  (function() {
+    var pts = [iso(st, sl - st, st), iso(sw - st, sl - st, st)];
+    if (d.scoopFront) {
+      var numPts = 24;
+      for (var i = numPts; i >= 0; i--) {
+        var x = st + (i / numPts) * (sw - 2 * st);
+        pts.push(iso(x, sl - st, scoopZ(x)));
+      }
+    } else {
+      pts.push(iso(sw - st, sl - st, sh));
+      pts.push(iso(st, sl - st, sh));
+    }
+    svg.appendChild(svgEl('polygon', {
+      points: pts.map(function(p) { return p.join(','); }).join(' '),
+      fill: '#e5d8c0', stroke: '#666', 'stroke-width': 0.5
+    }));
+  })();
 
   // Top edges of walls
   // Back wall top
@@ -784,68 +827,70 @@ function drawIsoView(d) {
     fill: '#d8c8a8', stroke: '#333', 'stroke-width': 0.8
   }));
 
-  // Left wall top
-  const lwTop = [iso(0, sl, sh), iso(sw, sl, sh), iso(sw, sl - st, sh), iso(0, sl - st, sh)];
+  // Left wall top strip (follows scoop curve)
+  (function() {
+    if (d.scoopFront) {
+      var numPts = 24;
+      var outerPts = [], innerPts = [];
+      for (var i = 0; i <= numPts; i++) {
+        var x = (i / numPts) * sw;
+        var z = scoopZ(x);
+        outerPts.push(iso(x, sl, z));
+        innerPts.push(iso(x, sl - st, z));
+      }
+      svg.appendChild(svgEl('polygon', {
+        points: outerPts.concat(innerPts.reverse()).map(function(p) { return p.join(','); }).join(' '),
+        fill: '#d0c098', stroke: '#333', 'stroke-width': 0.8
+      }));
+    } else {
+      var lwTop = [iso(0, sl, sh), iso(sw, sl, sh), iso(sw, sl - st, sh), iso(0, sl - st, sh)];
+      svg.appendChild(svgEl('polygon', {
+        points: lwTop.map(function(p) { return p.join(','); }).join(' '),
+        fill: '#d0c098', stroke: '#333', 'stroke-width': 0.8
+      }));
+    }
+  })();
+
+  // Right wall top strip (follows scoop curve, hidden)
+  (function() {
+    if (d.scoopFront) {
+      var numPts = 24;
+      var outerPts = [], innerPts = [];
+      for (var i = 0; i <= numPts; i++) {
+        var x = (i / numPts) * sw;
+        var z = scoopZ(x);
+        outerPts.push(iso(x, 0, z));
+        innerPts.push(iso(x, st, z));
+      }
+      svg.appendChild(svgEl('polygon', {
+        points: outerPts.concat(innerPts.reverse()).map(function(p) { return p.join(','); }).join(' '),
+        fill: '#d8c8a8', stroke: '#333', 'stroke-width': 0.5, 'stroke-dasharray': '2,1'
+      }));
+    } else {
+      var rwTop = [iso(0, 0, sh), iso(sw, 0, sh), iso(sw, st, sh), iso(0, st, sh)];
+      svg.appendChild(svgEl('polygon', {
+        points: rwTop.map(function(p) { return p.join(','); }).join(' '),
+        fill: '#d8c8a8', stroke: '#333', 'stroke-width': 0.5, 'stroke-dasharray': '2,1'
+      }));
+    }
+  })();
+
+  // Front wall top strip (at front height)
+  var fwt = [iso(sw, 0, frontH), iso(sw, sl, frontH), iso(sw - st, sl, frontH), iso(sw - st, 0, frontH)];
   svg.appendChild(svgEl('polygon', {
-    points: lwTop.map(p => p.join(',')).join(' '),
-    fill: '#d0c098', stroke: '#333', 'stroke-width': 0.8
+    points: fwt.map(function(p) { return p.join(','); }).join(' '),
+    fill: '#e0d4bc', stroke: '#333', 'stroke-width': 0.8
   }));
 
-  // Right wall top
-  const rwTop = [iso(0, 0, sh), iso(sw, 0, sh), iso(sw, st, sh), iso(0, st, sh)];
-  svg.appendChild(svgEl('polygon', {
-    points: rwTop.map(p => p.join(',')).join(' '),
-    fill: '#d8c8a8', stroke: '#333', 'stroke-width': 0.5, 'stroke-dasharray': '2,1'
-  }));
-
-  // Front wall top
-  let fwTopPoints;
+  // Scoop label
   if (d.scoopFront) {
-    // Scoop on front wall - lower the front wall center
-    const sd = d.scoopD * scale;
-    const scoopH = sh - sd;
-    // Front top edge with scoop curve
-    const p1 = iso(sw, 0, sh);
-    const p2 = iso(sw, sl * 0.1, scoopH);
-    const p3 = iso(sw, sl * 0.5, scoopH);
-    const p4 = iso(sw, sl * 0.9, scoopH);
-    const p5 = iso(sw, sl, sh);
-    const p6 = iso(sw, sl, sh);
-    const p7 = iso(sw, sl - st, sh);
-    const p8 = iso(sw - st, sl - st, sh);
-    const p9 = iso(sw - st, 0 + st, sh);
-    const p10 = iso(sw, st, sh);
-
-    // Draw front wall top with scoop indication
-    const fwt = [iso(sw, 0, sh), iso(sw, sl, sh), iso(sw - st, sl, sh), iso(sw - st, 0, sh)];
-    svg.appendChild(svgEl('polygon', {
-      points: fwt.map(p => p.join(',')).join(' '),
-      fill: '#e0d4bc', stroke: '#333', 'stroke-width': 0.8
-    }));
-
-    // Scoop arc line on front face
-    const sc1 = iso(sw, sl * 0.05, sh);
-    const sc2 = iso(sw, sl * 0.5, sh - sd);
-    const sc3 = iso(sw, sl * 0.95, sh);
-    svg.appendChild(svgEl('path', {
-      d: `M${sc1[0]},${sc1[1]} Q${sc2[0]},${sc2[1]} ${sc3[0]},${sc3[1]}`,
-      fill: 'none', stroke: '#e63946', 'stroke-width': 1, 'stroke-dasharray': '4,2'
-    }));
-
-    // Scoop label
-    const sclbl = iso(sw + 2, sl * 0.5, sh - sd / 2);
-    const sct = svgEl('text', {
-      x: sclbl[0] + 10, y: sclbl[1],
+    var sclblPt = iso(sw * 0.75, sl + 3, scoopZ(sw * 0.75));
+    var sct = svgEl('text', {
+      x: sclblPt[0] - 5, y: sclblPt[1] - 5,
       class: 'feature-label', 'font-size': '8px'
     });
     sct.textContent = 'SCOOP';
     svg.appendChild(sct);
-  } else {
-    const fwt = [iso(sw, 0, sh), iso(sw, sl, sh), iso(sw - st, sl, sh), iso(sw - st, 0, sh)];
-    svg.appendChild(svgEl('polygon', {
-      points: fwt.map(p => p.join(',')).join(' '),
-      fill: '#e0d4bc', stroke: '#333', 'stroke-width': 0.8
-    }));
   }
 
   // Pull cutout on front face
