@@ -1145,30 +1145,32 @@ function drawIsoView(d) {
   wName.textContent = 'WIDTH';
   svg.appendChild(wName);
 
-  // Length along right bottom (x-axis = Length after swap)
-  const dl1 = iso(sw, 0, 0), dl2 = iso(0, 0, 0);
-  const dlm1 = [dl1[0] + 15, dl1[1] + 8];
-  const dlm2 = [dl2[0] + 15, dl2[1] + 8];
+  // Length along left side bottom (visible side, y=sl)
+  const dl1 = iso(sw, sl, 0), dl2 = iso(0, sl, 0);
+  const dlm1 = [dl1[0] - 15, dl1[1] + 8];
+  const dlm2 = [dl2[0] - 15, dl2[1] + 8];
   svg.appendChild(svgEl('line', { x1: dl1[0], y1: dl1[1], x2: dlm1[0], y2: dlm1[1], class: 'dim-line' }));
   svg.appendChild(svgEl('line', { x1: dl2[0], y1: dl2[1], x2: dlm2[0], y2: dlm2[1], class: 'dim-line' }));
   svg.appendChild(svgEl('line', { x1: dlm1[0], y1: dlm1[1], x2: dlm2[0], y2: dlm2[1], class: 'dim-line' }));
   const lLabel = svgEl('text', {
-    x: (dlm1[0] + dlm2[0]) / 2 + 8,
+    x: (dlm1[0] + dlm2[0]) / 2 - 8,
     y: (dlm1[1] + dlm2[1]) / 2 - 2,
-    class: 'dim-text'
+    class: 'dim-text',
+    'text-anchor': 'end'
   });
   lLabel.textContent = fmtDim(d.L);
   svg.appendChild(lLabel);
   const lName = svgEl('text', {
-    x: (dlm1[0] + dlm2[0]) / 2 + 8,
+    x: (dlm1[0] + dlm2[0]) / 2 - 8,
     y: (dlm1[1] + dlm2[1]) / 2 + 8,
-    class: 'dim-text dim-text-small'
+    class: 'dim-text dim-text-small',
+    'text-anchor': 'end'
   });
   lName.textContent = 'LENGTH';
   svg.appendChild(lName);
 
-  // Height along front-left vertical
-  const dh1 = iso(sw, sl, 0), dh2 = iso(sw, sl, sh);
+  // Height along front-right vertical
+  const dh1 = iso(sw, 0, 0), dh2 = iso(sw, 0, sh);
   const dhOff = 18;
   svg.appendChild(svgEl('line', { x1: dh1[0] + dhOff, y1: dh1[1], x2: dh1[0], y2: dh1[1], class: 'dim-line' }));
   svg.appendChild(svgEl('line', { x1: dh2[0] + dhOff, y1: dh2[1], x2: dh2[0], y2: dh2[1], class: 'dim-line' }));
