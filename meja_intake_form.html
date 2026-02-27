@@ -236,6 +236,7 @@ body { font-family: 'Segoe UI', Arial, sans-serif; background: #f5f5f5; color: #
   </div>
   <div class="header-right">
     <button class="btn" style="background:#e63946;color:#fff;margin-bottom:6px;font-size:13px;padding:8px 18px" onclick="callFM('WebIntake_NewQuote')">+ New Quote</button>
+    <button class="btn" style="background:#555;color:#0f0;font-size:10px;padding:4px 10px;margin-bottom:6px;margin-left:6px" onclick="toggleDebug()">Debug</button>
     <div class="quote-num" id="quoteDisplay">Quote #</div>
     <div id="customerDisplay"></div>
     <div id="dateDisplay"></div>
@@ -349,7 +350,7 @@ body { font-family: 'Segoe UI', Arial, sans-serif; background: #f5f5f5; color: #
       <div class="grid-actions">
         <button class="btn btn-add" onclick="addRow('drawerIntake')">+ Add Row</button>
         <div style="flex:1"></div>
-        <button class="btn btn-green" onclick="callFM('Add Drawer Intake to Quote')">Add Drawer Intake to Quote</button>
+        <button class="btn btn-green" onclick="callFM('Trigger Add Drawer Intake')">Add Drawer Intake to Quote</button>
       </div>
     </div>
   </div>
@@ -380,7 +381,7 @@ body { font-family: 'Segoe UI', Arial, sans-serif; background: #f5f5f5; color: #
       <div class="grid-actions">
         <button class="btn btn-add" onclick="addRow('doorIntake')">+ Add Row</button>
         <div style="flex:1"></div>
-        <button class="btn btn-green" onclick="callFM('Add Door Intake to Quote')">Add Door Intake to Quote</button>
+        <button class="btn btn-green" onclick="callFM('Trigger Add Door Intake')">Add Door Intake to Quote</button>
       </div>
     </div>
   </div>
@@ -412,7 +413,7 @@ body { font-family: 'Segoe UI', Arial, sans-serif; background: #f5f5f5; color: #
       <div class="grid-actions">
         <button class="btn btn-add" onclick="addRow('drawerFrontIntake')">+ Add Row</button>
         <div style="flex:1"></div>
-        <button class="btn btn-green" onclick="callFM('Add Drawer Front Intake to Quote')">Add Drawer Front Intake to Quote</button>
+        <button class="btn btn-green" onclick="callFM('Trigger Add Drawer Front Intake')">Add Drawer Front Intake to Quote</button>
       </div>
     </div>
   </div>
