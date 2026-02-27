@@ -214,6 +214,53 @@ body { font-family: 'Segoe UI', Arial, sans-serif; background: #f5f5f5; color: #
 }
 .info-select:focus { outline: none; border-color: #1a1a2e; }
 
+/* Customer search */
+.customer-search {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 10px;
+  padding-bottom: 10px; border-bottom: 1px solid #eee;
+}
+.customer-search-input {
+  flex: 1; padding: 6px 10px 6px 28px; border: 1px solid #ccc; border-radius: 4px;
+  font-size: 13px; font-family: inherit; background: #fff;
+  transition: border-color 0.2s;
+}
+.customer-search-input:focus { outline: none; border-color: #1a1a2e; box-shadow: 0 0 0 2px rgba(26,26,46,0.15); }
+.customer-search-wrap {
+  position: relative; flex: 1;
+}
+.customer-search-wrap .search-icon {
+  position: absolute; left: 8px; top: 50%; transform: translateY(-50%);
+  font-size: 13px; color: #999; pointer-events: none;
+}
+.search-results {
+  display: none; position: absolute; top: 100%; left: 0; right: 0; z-index: 100;
+  background: #fff; border: 1px solid #ccc; border-top: none; border-radius: 0 0 4px 4px;
+  max-height: 200px; overflow-y: auto; box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+.search-results.visible { display: block; }
+.search-result-item {
+  padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #f0f0f0;
+  font-size: 12px; transition: background 0.1s;
+}
+.search-result-item:hover { background: #f0ebe0; }
+.search-result-item:last-child { border-bottom: none; }
+.search-result-item .sr-name { font-weight: 600; color: #333; }
+.search-result-item .sr-detail { color: #888; font-size: 11px; margin-left: 6px; }
+.search-result-msg {
+  padding: 10px 12px; color: #999; font-style: italic; font-size: 12px; text-align: center;
+}
+.btn-new-cust {
+  background: transparent; color: #1a1a2e; border: 1px dashed #1a1a2e;
+  padding: 5px 10px; font-size: 11px; font-weight: 600; cursor: pointer;
+  border-radius: 4px; white-space: nowrap; font-family: inherit;
+}
+.btn-new-cust:hover { background: #f0f0f5; border-style: solid; }
+.change-customer-link {
+  font-size: 10px; color: #1a1a2e; cursor: pointer; text-decoration: underline;
+  font-weight: 400; text-transform: none; letter-spacing: 0;
+}
+.change-customer-link:hover { color: #e63946; }
+
 /* Print */
 @media print {
   .header { padding: 6px 12px; }
@@ -248,7 +295,16 @@ body { font-family: 'Segoe UI', Arial, sans-serif; background: #f5f5f5; color: #
   <!-- CUSTOMER & QUOTE INFO -->
   <div class="info-bar">
     <div class="info-group">
-      <h3>Customer</h3>
+      <h3>Customer <span class="change-customer-link" id="changeCustLink" onclick="showCustomerSearch()" style="display:none">Change</span></h3>
+      <div class="customer-search" id="customerSearchBar">
+        <div class="customer-search-wrap">
+          <span class="search-icon">&#128269;</span>
+          <input type="text" class="customer-search-input" id="custSearchInput" placeholder="Type name to search..." oninput="onSearchInput()" autocomplete="off">
+          <div class="search-results" id="searchResults"></div>
+        </div>
+        <button class="btn-new-cust" onclick="createNewCustomer()">+ New</button>
+      </div>
+      <div id="customerFields" style="display:none">
       <div class="info-row">
         <span class="info-label">Name</span>
         <input type="text" class="info-input" id="custFirstName" placeholder="First" style="flex:1" onchange="onInfoChange('FirstName', this.value)">
@@ -280,6 +336,7 @@ body { font-family: 'Segoe UI', Arial, sans-serif; background: #f5f5f5; color: #
         <span class="info-label">Email</span>
         <input type="email" class="info-input" id="custEmail" placeholder="Email Address" onchange="onInfoChange('emailaddress', this.value)">
       </div>
+      </div><!-- /customerFields -->
     </div>
     <div class="info-group">
       <h3>Quote Details</h3>
@@ -856,6 +913,17 @@ function loadIntakeData(jsonInput) {
   setInputVal('custPhone', state.customer.PhoneNumber);
   setInputVal('custEmail', state.customer.emailaddress);
 
+  // Show/hide customer search vs fields based on whether customer exists
+  if (state.customerId) {
+    document.getElementById('customerSearchBar').style.display = 'none';
+    document.getElementById('customerFields').style.display = '';
+    document.getElementById('changeCustLink').style.display = '';
+  } else {
+    document.getElementById('customerSearchBar').style.display = '';
+    document.getElementById('customerFields').style.display = 'none';
+    document.getElementById('changeCustLink').style.display = 'none';
+  }
+
   // Populate quote fields
   setInputVal('infoQuoteNo', state.quoteNumber);
   setInputVal('infoDate', state.quote.Date);
@@ -884,6 +952,159 @@ function setSelectVal(id, val) {
     el.value = val;
   }
 }
+
+// ============================================================
+// CUSTOMER SEARCH
+// ============================================================
+var searchTimer = null;
+
+function onSearchInput() {
+  var query = document.getElementById('custSearchInput').value.trim();
+  var resultsDiv = document.getElementById('searchResults');
+
+  clearTimeout(searchTimer);
+
+  if (query.length < 2) {
+    resultsDiv.className = 'search-results';
+    resultsDiv.innerHTML = '';
+    return;
+  }
+
+  // Show searching message
+  resultsDiv.className = 'search-results visible';
+  resultsDiv.innerHTML = '<div class="search-result-msg">Searching...</div>';
+
+  // Debounce 300ms
+  searchTimer = setTimeout(function() {
+    callFM('WebIntake_SearchCustomer', JSON.stringify({ query: query }));
+    debugMsg('Searching customers: ' + query);
+  }, 300);
+}
+
+// FM calls this with search results
+function receiveCustomerResults(jsonInput) {
+  var results = typeof jsonInput === 'string' ? JSON.parse(jsonInput) : jsonInput;
+  var resultsDiv = document.getElementById('searchResults');
+
+  if (!results || results.length === 0) {
+    resultsDiv.className = 'search-results visible';
+    resultsDiv.innerHTML = '<div class="search-result-msg">No customers found</div>';
+    return;
+  }
+
+  var html = '';
+  for (var i = 0; i < results.length; i++) {
+    var c = results[i];
+    var name = (c.FirstName || '') + ' ' + (c.LastName || '');
+    var detail = '';
+    if (c.City || c.State) {
+      detail = (c.City || '') + (c.City && c.State ? ', ' : '') + (c.State || '');
+    }
+    html += '<div class="search-result-item" onclick=\'selectCustomer(' + JSON.stringify(c).replace(/'/g, "&#39;") + ')\'>' +
+      '<span class="sr-name">' + name.trim() + '</span>' +
+      (detail ? '<span class="sr-detail">' + detail + '</span>' : '') +
+      '</div>';
+  }
+
+  resultsDiv.className = 'search-results visible';
+  resultsDiv.innerHTML = html;
+  debugMsg('Received ' + results.length + ' customer results');
+}
+
+function selectCustomer(custData) {
+  // Update state
+  state.customerId = custData._pk;
+  state.customer = {
+    FirstName: custData.FirstName || '',
+    LastName: custData.LastName || '',
+    StreetAddress: custData.StreetAddress || '',
+    City: custData.City || '',
+    State: custData.State || '',
+    ZipCode: custData.ZipCode || '',
+    PhoneNumber: custData.PhoneNumber || '',
+    emailaddress: custData.emailaddress || ''
+  };
+
+  // Populate fields
+  setInputVal('custFirstName', state.customer.FirstName);
+  setInputVal('custLastName', state.customer.LastName);
+  setInputVal('custStreet', state.customer.StreetAddress);
+  setInputVal('custCity', state.customer.City);
+  setInputVal('custState', state.customer.State);
+  setInputVal('custZip', state.customer.ZipCode);
+  setInputVal('custPhone', state.customer.PhoneNumber);
+  setInputVal('custEmail', state.customer.emailaddress);
+
+  // Update header
+  var custName = (state.customer.FirstName || '') + ' ' + (state.customer.LastName || '');
+  document.getElementById('customerDisplay').textContent = custName.trim();
+
+  // Show fields, hide search
+  document.getElementById('customerFields').style.display = '';
+  document.getElementById('customerSearchBar').style.display = 'none';
+  document.getElementById('changeCustLink').style.display = '';
+  document.getElementById('searchResults').className = 'search-results';
+  document.getElementById('custSearchInput').value = '';
+
+  // Tell FM to link this customer to the quote
+  if (state.quoteId) {
+    callFM('WebIntake_LinkCustomer', JSON.stringify({
+      quoteId: state.quoteId,
+      customerId: custData._pk
+    }));
+  }
+
+  debugMsg('Selected customer: ' + custName.trim() + ' (ID: ' + custData._pk + ')');
+}
+
+function createNewCustomer() {
+  // Hide search, show blank fields
+  document.getElementById('customerSearchBar').style.display = 'none';
+  document.getElementById('customerFields').style.display = '';
+  document.getElementById('changeCustLink').style.display = '';
+  document.getElementById('searchResults').className = 'search-results';
+  document.getElementById('custSearchInput').value = '';
+
+  // Clear customer fields
+  state.customer = {};
+  state.customerId = null;
+  setInputVal('custFirstName', '');
+  setInputVal('custLastName', '');
+  setInputVal('custStreet', '');
+  setInputVal('custCity', '');
+  setInputVal('custState', '');
+  setInputVal('custZip', '');
+  setInputVal('custPhone', '');
+  setInputVal('custEmail', '');
+  document.getElementById('customerDisplay').textContent = '';
+
+  // Tell FM to create a new customer and link to quote
+  if (state.quoteId) {
+    callFM('WebIntake_NewCustomer', JSON.stringify({ quoteId: state.quoteId }));
+  }
+
+  debugMsg('Creating new customer');
+  // Focus first name field
+  document.getElementById('custFirstName').focus();
+}
+
+function showCustomerSearch() {
+  document.getElementById('customerSearchBar').style.display = '';
+  document.getElementById('customerFields').style.display = 'none';
+  document.getElementById('changeCustLink').style.display = 'none';
+  document.getElementById('custSearchInput').value = '';
+  document.getElementById('searchResults').className = 'search-results';
+  document.getElementById('custSearchInput').focus();
+}
+
+// Close search dropdown when clicking outside
+document.addEventListener('click', function(e) {
+  var wrap = document.querySelector('.customer-search-wrap');
+  if (wrap && !wrap.contains(e.target)) {
+    document.getElementById('searchResults').className = 'search-results';
+  }
+});
+
 
 // Customer field change → send to FM
 function onInfoChange(field, value) {
