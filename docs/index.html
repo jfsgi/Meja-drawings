@@ -1,0 +1,1070 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MEJA Designs - Drawer Box Drawing</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: #f5f5f5;
+    color: #333;
+  }
+  .header {
+    background: #1a1a2e;
+    color: white;
+    padding: 12px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .header h1 { font-size: 18px; font-weight: 600; letter-spacing: 1px; }
+  .header .subtitle { font-size: 12px; opacity: 0.7; }
+  .controls {
+    background: white;
+    padding: 16px 24px;
+    border-bottom: 1px solid #ddd;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    align-items: flex-end;
+  }
+  .control-group { display: flex; flex-direction: column; gap: 4px; }
+  .control-group label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: #666;
+    letter-spacing: 0.5px;
+  }
+  .control-group input[type="number"] {
+    width: 90px;
+    padding: 6px 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 14px;
+  }
+  .control-group input[type="number"]:focus {
+    outline: none;
+    border-color: #1a1a2e;
+  }
+  .toggle-group {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    padding: 6px 0;
+  }
+  .toggle-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  .toggle-label input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: #1a1a2e;
+  }
+  .separator {
+    width: 1px;
+    height: 40px;
+    background: #ddd;
+    align-self: center;
+  }
+  .btn {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .btn-print {
+    background: #1a1a2e;
+    color: white;
+  }
+  .btn-print:hover { background: #2a2a4e; }
+  .drawing-area {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto auto;
+    gap: 16px;
+    padding: 16px 24px;
+  }
+  .view-panel {
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  .view-panel .view-title {
+    background: #eee;
+    padding: 8px 12px;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #555;
+    border-bottom: 1px solid #ddd;
+  }
+  .view-panel svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+  .view-container {
+    padding: 12px;
+    height: 340px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .iso-panel {
+    grid-column: 1 / -1;
+  }
+  .iso-panel .view-container {
+    height: 400px;
+  }
+  .spec-table {
+    grid-column: 1 / -1;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  .spec-table table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  .spec-table th {
+    background: #eee;
+    padding: 8px 12px;
+    text-align: left;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #555;
+    border-bottom: 1px solid #ddd;
+  }
+  .spec-table td {
+    padding: 6px 12px;
+    border-bottom: 1px solid #f0f0f0;
+  }
+
+  /* Dimension lines */
+  .dim-line { stroke: #e63946; stroke-width: 0.5; }
+  .dim-arrow { fill: #e63946; }
+  .dim-text {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    font-size: 10px;
+    fill: #e63946;
+    text-anchor: middle;
+  }
+  .dim-text-small { font-size: 8px; }
+  .outline { stroke: #333; stroke-width: 1; fill: none; }
+  .outline-thick { stroke: #333; stroke-width: 1.5; fill: none; }
+  .outline-thin { stroke: #666; stroke-width: 0.5; fill: none; }
+  .outline-dashed { stroke: #999; stroke-width: 0.5; stroke-dasharray: 3,2; fill: none; }
+  .fill-light { fill: #f9f3e8; }
+  .fill-side { fill: #e8dcc8; }
+  .fill-top { fill: #f0e6d2; }
+  .fill-inner { fill: #fff8ee; }
+  .dovetail-line { stroke: #8B4513; stroke-width: 0.6; fill: none; }
+  .cutout-fill { fill: #f5f5f5; stroke: #333; stroke-width: 0.8; }
+  .scoop-fill { fill: none; stroke: #333; stroke-width: 0.8; stroke-dasharray: 4,2; }
+  .notch-fill { fill: #f5f5f5; stroke: #333; stroke-width: 0.8; }
+  .label-text {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    font-size: 8px;
+    fill: #666;
+    text-anchor: middle;
+  }
+  .feature-label {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    font-size: 7px;
+    fill: #0066cc;
+    text-anchor: middle;
+  }
+
+  /* Print styles */
+  @media print {
+    body { background: white; }
+    .controls { display: none; }
+    .header { background: #333; padding: 8px 16px; }
+    .drawing-area { padding: 8px; gap: 8px; }
+    .view-container { height: auto !important; min-height: 250px; }
+    .iso-panel .view-container { min-height: 300px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <h1>MEJA DESIGNS</h1>
+    <div class="subtitle">Custom Drawer Box - Technical Drawing</div>
+  </div>
+  <div style="text-align:right">
+    <div id="dateDisplay" style="font-size:12px;opacity:0.7"></div>
+    <div id="orderDisplay" style="font-size:12px;opacity:0.7"></div>
+  </div>
+</div>
+
+<div class="controls">
+  <div class="control-group">
+    <label>Width (in)</label>
+    <input type="number" id="dimWidth" value="24" min="3" max="60" step="0.125" onchange="updateDrawing()">
+  </div>
+  <div class="control-group">
+    <label>Length / Depth (in)</label>
+    <input type="number" id="dimLength" value="21" min="3" max="36" step="0.125" onchange="updateDrawing()">
+  </div>
+  <div class="control-group">
+    <label>Height (in)</label>
+    <input type="number" id="dimHeight" value="7" min="2" max="16" step="0.125" onchange="updateDrawing()">
+  </div>
+  <div class="control-group">
+    <label>Thickness (in)</label>
+    <input type="number" id="dimThick" value="0.5625" min="0.25" max="1" step="0.0625" onchange="updateDrawing()">
+  </div>
+
+  <div class="separator"></div>
+
+  <div class="control-group">
+    <label>Features</label>
+    <div class="toggle-group">
+      <label class="toggle-label">
+        <input type="checkbox" id="togPull" checked onchange="updateDrawing()"> Pull Cutout
+      </label>
+      <label class="toggle-label">
+        <input type="checkbox" id="togScoop" checked onchange="updateDrawing()"> Scoop Front
+      </label>
+      <label class="toggle-label">
+        <input type="checkbox" id="togNotch" checked onchange="updateDrawing()"> Undermount Notches
+      </label>
+    </div>
+  </div>
+
+  <div class="separator"></div>
+
+  <div class="control-group">
+    <label>Pull Cutout Width (in)</label>
+    <input type="number" id="pullWidth" value="4" min="1" max="12" step="0.125" onchange="updateDrawing()">
+  </div>
+  <div class="control-group">
+    <label>Pull Depth (in)</label>
+    <input type="number" id="pullDepth" value="1.5" min="0.5" max="4" step="0.125" onchange="updateDrawing()">
+  </div>
+  <div class="control-group">
+    <label>Scoop Depth (in)</label>
+    <input type="number" id="scoopDepth" value="1" min="0.5" max="3" step="0.125" onchange="updateDrawing()">
+  </div>
+
+  <div class="separator"></div>
+
+  <button class="btn btn-print" onclick="window.print()">Print / Save PDF</button>
+</div>
+
+<div class="drawing-area">
+  <!-- Top View -->
+  <div class="view-panel">
+    <div class="view-title">Top View</div>
+    <div class="view-container" id="topViewContainer"></div>
+  </div>
+
+  <!-- Front View -->
+  <div class="view-panel">
+    <div class="view-title">Front View</div>
+    <div class="view-container" id="frontViewContainer"></div>
+  </div>
+
+  <!-- Isometric View -->
+  <div class="view-panel iso-panel">
+    <div class="view-title">Isometric View</div>
+    <div class="view-container" id="isoViewContainer"></div>
+  </div>
+
+  <!-- Spec Table -->
+  <div class="spec-table">
+    <table>
+      <tr>
+        <th>Dimension</th><th>Value</th><th>Feature</th><th>Status</th>
+      </tr>
+      <tbody id="specBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// MEJA Designs - Drawer Box Technical Drawing Generator
+// For use in FileMaker Web Viewer
+// ============================================================
+
+function getInputs() {
+  return {
+    W: parseFloat(document.getElementById('dimWidth').value) || 24,
+    L: parseFloat(document.getElementById('dimLength').value) || 21,
+    H: parseFloat(document.getElementById('dimHeight').value) || 7,
+    T: parseFloat(document.getElementById('dimThick').value) || 0.5625,
+    pullCutout: document.getElementById('togPull').checked,
+    scoopFront: document.getElementById('togScoop').checked,
+    undermountNotch: document.getElementById('togNotch').checked,
+    pullW: parseFloat(document.getElementById('pullWidth').value) || 4,
+    pullD: parseFloat(document.getElementById('pullDepth').value) || 1.5,
+    scoopD: parseFloat(document.getElementById('scoopDepth').value) || 1,
+  };
+}
+
+// Helper: create SVG element
+function svgEl(tag, attrs) {
+  const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
+  for (const [k, v] of Object.entries(attrs || {})) {
+    el.setAttribute(k, v);
+  }
+  return el;
+}
+
+// Helper: dimension line with arrows and text
+function dimLine(svg, x1, y1, x2, y2, label, offset, side) {
+  // side: 'top','bottom','left','right' determines offset direction
+  const g = svgEl('g');
+  let ox = 0, oy = 0;
+  if (side === 'top') oy = -offset;
+  else if (side === 'bottom') oy = offset;
+  else if (side === 'left') ox = -offset;
+  else if (side === 'right') ox = offset;
+
+  const lx1 = x1 + ox, ly1 = y1 + oy;
+  const lx2 = x2 + ox, ly2 = y2 + oy;
+
+  // Extension lines
+  g.appendChild(svgEl('line', { x1, y1, x2: lx1, y2: ly1, class: 'dim-line' }));
+  g.appendChild(svgEl('line', { x1: x2, y1: y2, x2: lx2, y2: ly2, class: 'dim-line' }));
+
+  // Main dim line
+  g.appendChild(svgEl('line', { x1: lx1, y1: ly1, x2: lx2, y2: ly2, class: 'dim-line' }));
+
+  // Arrows
+  const arrowSize = 2;
+  const dx = lx2 - lx1, dy = ly2 - ly1;
+  const len = Math.sqrt(dx * dx + dy * dy);
+  if (len > 0) {
+    const ux = dx / len, uy = dy / len;
+    const px = -uy, py = ux;
+    // Arrow at start
+    g.appendChild(svgEl('polygon', {
+      points: `${lx1},${ly1} ${lx1 + ux * arrowSize + px * arrowSize * 0.4},${ly1 + uy * arrowSize + py * arrowSize * 0.4} ${lx1 + ux * arrowSize - px * arrowSize * 0.4},${ly1 + uy * arrowSize - py * arrowSize * 0.4}`,
+      class: 'dim-arrow'
+    }));
+    // Arrow at end
+    g.appendChild(svgEl('polygon', {
+      points: `${lx2},${ly2} ${lx2 - ux * arrowSize + px * arrowSize * 0.4},${ly2 - uy * arrowSize + py * arrowSize * 0.4} ${lx2 - ux * arrowSize - px * arrowSize * 0.4},${ly2 - uy * arrowSize - py * arrowSize * 0.4}`,
+      class: 'dim-arrow'
+    }));
+  }
+
+  // Text
+  const tx = (lx1 + lx2) / 2, ty = (ly1 + ly2) / 2;
+  const txt = svgEl('text', {
+    x: tx,
+    y: ty - 2,
+    class: 'dim-text'
+  });
+  txt.textContent = label;
+  g.appendChild(txt);
+
+  svg.appendChild(g);
+}
+
+// Format dimension as fraction
+function fmtDim(val) {
+  const whole = Math.floor(val);
+  const frac = val - whole;
+  if (frac < 0.01) return whole + '"';
+
+  const fractions = [
+    [1/16, '1/16'], [1/8, '1/8'], [3/16, '3/16'], [1/4, '1/4'],
+    [5/16, '5/16'], [3/8, '3/8'], [7/16, '7/16'], [1/2, '1/2'],
+    [9/16, '9/16'], [5/8, '5/8'], [11/16, '11/16'], [3/4, '3/4'],
+    [13/16, '13/16'], [7/8, '7/8'], [15/16, '15/16']
+  ];
+
+  let closest = fractions[0];
+  let minDiff = Math.abs(frac - fractions[0][0]);
+  for (const f of fractions) {
+    const d = Math.abs(frac - f[0]);
+    if (d < minDiff) { minDiff = d; closest = f; }
+  }
+
+  if (whole === 0) return closest[1] + '"';
+  return whole + '-' + closest[1] + '"';
+}
+
+
+// ============================================================
+// TOP VIEW
+// ============================================================
+function drawTopView(d) {
+  const container = document.getElementById('topViewContainer');
+  container.innerHTML = '';
+
+  const margin = 30;
+  const scale = Math.min(
+    (container.clientWidth - margin * 2) / d.W,
+    (container.clientHeight - margin * 2) / d.L
+  ) * 0.75;
+
+  const sw = d.W * scale, sl = d.L * scale;
+  const st = d.T * scale;
+  const vw = sw + margin * 2, vh = sl + margin * 2;
+
+  const svg = svgEl('svg', {
+    viewBox: `0 0 ${vw} ${vh}`,
+    width: '100%',
+    height: '100%',
+    preserveAspectRatio: 'xMidYMid meet'
+  });
+
+  const ox = margin, oy = margin;
+
+  // Outer rectangle (box exterior)
+  svg.appendChild(svgEl('rect', {
+    x: ox, y: oy, width: sw, height: sl,
+    class: 'outline-thick fill-light'
+  }));
+
+  // Inner rectangle (cavity)
+  svg.appendChild(svgEl('rect', {
+    x: ox + st, y: oy + st, width: sw - st * 2, height: sl - st * 2,
+    class: 'outline fill-inner'
+  }));
+
+  // Dovetail markers on corners
+  const dtSize = Math.min(st * 2.5, 8);
+  const corners = [
+    [ox, oy], [ox + sw, oy], [ox, oy + sl], [ox + sw, oy + sl]
+  ];
+  for (const [cx, cy] of corners) {
+    // Small dovetail zigzag marks at corners
+    const dx = cx === ox ? 1 : -1;
+    const dy = cy === oy ? 1 : -1;
+    const path = `M${cx},${cy + dy * 2} l${dx * dtSize * 0.3},${dy * dtSize * 0.4} l${-dx * dtSize * 0.3},${dy * dtSize * 0.4}`;
+    svg.appendChild(svgEl('path', { d: path, class: 'dovetail-line' }));
+    const path2 = `M${cx + dx * 2},${cy} l${dx * dtSize * 0.4},${dy * dtSize * 0.3} l${dx * dtSize * 0.4},${-dy * dtSize * 0.3}`;
+    svg.appendChild(svgEl('path', { d: path2, class: 'dovetail-line' }));
+  }
+
+  // Pull cutout on front edge (bottom of top view = front of box)
+  if (d.pullCutout) {
+    const pw = d.pullW * scale;
+    const pd = d.pullD * scale;
+    const pcx = ox + sw / 2 - pw / 2;
+    const pcy = oy + sl - pd;
+    // Rounded cutout
+    const r = Math.min(pd, pw / 4);
+    const cutPath = `M${pcx},${oy + sl} L${pcx},${pcy + r} Q${pcx},${pcy} ${pcx + r},${pcy} L${pcx + pw - r},${pcy} Q${pcx + pw},${pcy} ${pcx + pw},${pcy + r} L${pcx + pw},${oy + sl}`;
+    svg.appendChild(svgEl('path', { d: cutPath, class: 'cutout-fill' }));
+
+    // Label
+    const lbl = svgEl('text', {
+      x: ox + sw / 2, y: pcy - 3,
+      class: 'feature-label'
+    });
+    lbl.textContent = 'PULL CUTOUT';
+    svg.appendChild(lbl);
+  }
+
+  // Undermount notches (rear bottom corners in top view = top of drawing)
+  if (d.undermountNotch) {
+    const nw = 2.5 * scale; // notch width
+    const nd = 1 * scale;   // notch depth
+    // Left rear
+    svg.appendChild(svgEl('rect', {
+      x: ox, y: oy, width: nw, height: nd,
+      class: 'notch-fill'
+    }));
+    // Right rear
+    svg.appendChild(svgEl('rect', {
+      x: ox + sw - nw, y: oy, width: nw, height: nd,
+      class: 'notch-fill'
+    }));
+
+    const lbl = svgEl('text', {
+      x: ox + sw / 2, y: oy + nd + 8,
+      class: 'feature-label'
+    });
+    lbl.textContent = 'UNDERMOUNT NOTCHES (REAR)';
+    svg.appendChild(lbl);
+  }
+
+  // Dimension lines
+  dimLine(svg, ox, oy, ox + sw, oy, fmtDim(d.W), 18, 'top');
+  dimLine(svg, ox, oy, ox, oy + sl, fmtDim(d.L), 18, 'left');
+
+  // Thickness dimension
+  dimLine(svg, ox, oy + sl + 3, ox + st, oy + sl + 3, fmtDim(d.T), 8, 'bottom');
+
+  // Labels
+  const topLabel = svgEl('text', {
+    x: ox + sw / 2, y: oy + sl / 2,
+    class: 'label-text', 'font-size': '10px'
+  });
+  topLabel.textContent = 'INTERIOR';
+  svg.appendChild(topLabel);
+
+  // Front/rear labels
+  const frontLbl = svgEl('text', {
+    x: ox + sw / 2, y: oy + sl + 10,
+    class: 'label-text', 'font-size': '7px'
+  });
+  frontLbl.textContent = 'FRONT';
+  svg.appendChild(frontLbl);
+
+  const rearLbl = svgEl('text', {
+    x: ox + sw / 2, y: oy - 3,
+    class: 'label-text', 'font-size': '7px'
+  });
+  rearLbl.textContent = 'REAR';
+  svg.appendChild(rearLbl);
+
+  container.appendChild(svg);
+}
+
+
+// ============================================================
+// FRONT VIEW
+// ============================================================
+function drawFrontView(d) {
+  const container = document.getElementById('frontViewContainer');
+  container.innerHTML = '';
+
+  const margin = 30;
+  const scale = Math.min(
+    (container.clientWidth - margin * 2) / d.W,
+    (container.clientHeight - margin * 2) / d.H
+  ) * 0.75;
+
+  const sw = d.W * scale, sh = d.H * scale;
+  const st = d.T * scale;
+  const vw = sw + margin * 2, vh = sh + margin * 2;
+
+  const svg = svgEl('svg', {
+    viewBox: `0 0 ${vw} ${vh}`,
+    width: '100%',
+    height: '100%',
+    preserveAspectRatio: 'xMidYMid meet'
+  });
+
+  const ox = margin, oy = margin;
+
+  // Outer rectangle
+  svg.appendChild(svgEl('rect', {
+    x: ox, y: oy, width: sw, height: sh,
+    class: 'outline-thick fill-light'
+  }));
+
+  // Inner cavity visible from front (between side walls)
+  svg.appendChild(svgEl('rect', {
+    x: ox + st, y: oy, width: sw - st * 2, height: sh - st,
+    class: 'outline fill-inner'
+  }));
+
+  // Wall cross-sections (left and right sides)
+  // Left wall
+  svg.appendChild(svgEl('rect', {
+    x: ox, y: oy, width: st, height: sh,
+    class: 'outline fill-side'
+  }));
+  // Hatch lines for left wall
+  for (let i = 0; i < sh; i += 4) {
+    svg.appendChild(svgEl('line', {
+      x1: ox, y1: oy + i, x2: ox + Math.min(st, i + st), y2: oy + Math.max(0, i - st + st),
+      stroke: '#c9b99a', 'stroke-width': 0.3
+    }));
+  }
+
+  // Right wall
+  svg.appendChild(svgEl('rect', {
+    x: ox + sw - st, y: oy, width: st, height: sh,
+    class: 'outline fill-side'
+  }));
+
+  // Bottom
+  svg.appendChild(svgEl('rect', {
+    x: ox, y: oy + sh - st, width: sw, height: st,
+    class: 'outline fill-side'
+  }));
+
+  // Dovetail markers on top corners
+  const dtH = Math.min(sh * 0.12, 8);
+  for (let n = 0; n < 3; n++) {
+    const yy = oy + dtH * n * 2.2 + 4;
+    if (yy + dtH > oy + sh) break;
+    // Left
+    const ldPath = `M${ox},${yy} l${st * 0.6},${dtH * 0.3} l0,${dtH * 0.4} l${-st * 0.6},${dtH * 0.3}`;
+    svg.appendChild(svgEl('path', { d: ldPath, class: 'dovetail-line' }));
+    // Right
+    const rdPath = `M${ox + sw},${yy} l${-st * 0.6},${dtH * 0.3} l0,${dtH * 0.4} l${st * 0.6},${dtH * 0.3}`;
+    svg.appendChild(svgEl('path', { d: rdPath, class: 'dovetail-line' }));
+  }
+
+  // Pull cutout on front face
+  if (d.pullCutout) {
+    const pw = d.pullW * scale;
+    const pd = d.pullD * scale;
+    const pcx = ox + sw / 2 - pw / 2;
+    const r = Math.min(pd * 0.6, pw / 4);
+    const cutPath = `M${pcx},${oy} L${pcx},${oy + pd - r} Q${pcx},${oy + pd} ${pcx + r},${oy + pd} L${pcx + pw - r},${oy + pd} Q${pcx + pw},${oy + pd} ${pcx + pw},${oy + pd - r} L${pcx + pw},${oy}`;
+    svg.appendChild(svgEl('path', { d: cutPath, class: 'cutout-fill' }));
+
+    // Pull dim
+    dimLine(svg, pcx, oy, pcx + pw, oy, fmtDim(d.pullW), -3, 'top');
+  }
+
+  // Scoop front (arc on front face)
+  if (d.scoopFront) {
+    const sd = d.scoopD * scale;
+    const scoopW = (sw - st * 2) * 0.8;
+    const scx = ox + sw / 2 - scoopW / 2;
+    const scoopPath = `M${scx},${oy} Q${ox + sw / 2},${oy + sd} ${scx + scoopW},${oy}`;
+    svg.appendChild(svgEl('path', { d: scoopPath, class: 'scoop-fill' }));
+
+    const lbl = svgEl('text', {
+      x: ox + sw / 2, y: oy + sd + 8,
+      class: 'feature-label'
+    });
+    lbl.textContent = 'SCOOP';
+    svg.appendChild(lbl);
+  }
+
+  // Undermount notches (bottom corners)
+  if (d.undermountNotch) {
+    const nw = 2.5 * scale;
+    const nh = 0.5 * scale;
+    svg.appendChild(svgEl('rect', {
+      x: ox, y: oy + sh - nh, width: nw, height: nh,
+      class: 'notch-fill'
+    }));
+    svg.appendChild(svgEl('rect', {
+      x: ox + sw - nw, y: oy + sh - nh, width: nw, height: nh,
+      class: 'notch-fill'
+    }));
+  }
+
+  // Dimensions
+  dimLine(svg, ox, oy, ox + sw, oy, fmtDim(d.W), 18, 'top');
+  dimLine(svg, ox + sw, oy, ox + sw, oy + sh, fmtDim(d.H), 18, 'right');
+  // Thickness
+  dimLine(svg, ox, oy + sh, ox + st, oy + sh, fmtDim(d.T), 10, 'bottom');
+
+  container.appendChild(svg);
+}
+
+
+// ============================================================
+// ISOMETRIC VIEW
+// ============================================================
+function drawIsoView(d) {
+  const container = document.getElementById('isoViewContainer');
+  container.innerHTML = '';
+
+  const margin = 60;
+  const maxDim = Math.max(d.W, d.L, d.H);
+  const scale = Math.min(
+    (container.clientWidth - margin * 2) / (maxDim * 1.8),
+    (container.clientHeight - margin * 2) / (maxDim * 1.5)
+  ) * 0.7;
+
+  // Isometric projection angles (30 degrees)
+  const cos30 = Math.cos(Math.PI / 6); // 0.866
+  const sin30 = 0.5;
+
+  const sw = d.W * scale, sl = d.L * scale, sh = d.H * scale;
+  const st = d.T * scale;
+
+  // Project 3D point to 2D isometric
+  function iso(x, y, z) {
+    return [
+      margin + sl * cos30 + x * cos30 - y * cos30,
+      margin + x * sin30 + y * sin30 - z + sh
+    ];
+  }
+
+  const totalW = (d.W + d.L) * cos30 * scale + margin * 2;
+  const totalH = (d.W + d.L) * sin30 * scale + d.H * scale + margin * 2;
+
+  const svg = svgEl('svg', {
+    viewBox: `0 0 ${totalW} ${totalH}`,
+    width: '100%',
+    height: '100%',
+    preserveAspectRatio: 'xMidYMid meet'
+  });
+
+  // Bottom face (floor of box)
+  const bf = [iso(0, 0, 0), iso(sw, 0, 0), iso(sw, sl, 0), iso(0, sl, 0)];
+  svg.appendChild(svgEl('polygon', {
+    points: bf.map(p => p.join(',')).join(' '),
+    fill: '#e8dcc8', stroke: '#333', 'stroke-width': 1
+  }));
+
+  // Back wall (left side in iso - the length/depth wall)
+  const bw = [iso(0, 0, 0), iso(0, sl, 0), iso(0, sl, sh), iso(0, 0, sh)];
+  svg.appendChild(svgEl('polygon', {
+    points: bw.map(p => p.join(',')).join(' '),
+    fill: '#ddd0b8', stroke: '#333', 'stroke-width': 1
+  }));
+
+  // Left wall (the width-facing wall on left)
+  const lw = [iso(0, sl, 0), iso(sw, sl, 0), iso(sw, sl, sh), iso(0, sl, sh)];
+  svg.appendChild(svgEl('polygon', {
+    points: lw.map(p => p.join(',')).join(' '),
+    fill: '#c9b99a', stroke: '#333', 'stroke-width': 1
+  }));
+
+  // Right wall
+  const rw = [iso(0, 0, 0), iso(sw, 0, 0), iso(sw, 0, sh), iso(0, 0, sh)];
+  svg.appendChild(svgEl('polygon', {
+    points: rw.map(p => p.join(',')).join(' '),
+    fill: '#d4c4a8', stroke: '#333', 'stroke-width': 0.5, 'stroke-dasharray': '3,2'
+  }));
+
+  // Front wall
+  const fw = [iso(sw, 0, 0), iso(sw, sl, 0), iso(sw, sl, sh), iso(sw, 0, sh)];
+  svg.appendChild(svgEl('polygon', {
+    points: fw.map(p => p.join(',')).join(' '),
+    fill: '#f0e6d2', stroke: '#333', 'stroke-width': 1
+  }));
+
+  // Inner floor
+  const ifl = [iso(st, st, st), iso(sw - st, st, st), iso(sw - st, sl - st, st), iso(st, sl - st, st)];
+  svg.appendChild(svgEl('polygon', {
+    points: ifl.map(p => p.join(',')).join(' '),
+    fill: '#fff8ee', stroke: '#666', 'stroke-width': 0.5
+  }));
+
+  // Inner back wall top edge
+  const ibTop = [iso(st, st, st), iso(st, st, sh), iso(st, sl - st, sh), iso(st, sl - st, st)];
+  svg.appendChild(svgEl('polygon', {
+    points: ibTop.map(p => p.join(',')).join(' '),
+    fill: '#efe5d0', stroke: '#666', 'stroke-width': 0.5
+  }));
+
+  // Inner left wall
+  const ilw = [iso(st, sl - st, st), iso(sw - st, sl - st, st), iso(sw - st, sl - st, sh), iso(st, sl - st, sh)];
+  svg.appendChild(svgEl('polygon', {
+    points: ilw.map(p => p.join(',')).join(' '),
+    fill: '#e5d8c0', stroke: '#666', 'stroke-width': 0.5
+  }));
+
+  // Top edges of walls
+  // Back wall top
+  const bwTop = [iso(0, 0, sh), iso(st, 0, sh), iso(st, sl, sh), iso(0, sl, sh)];
+  svg.appendChild(svgEl('polygon', {
+    points: bwTop.map(p => p.join(',')).join(' '),
+    fill: '#d8c8a8', stroke: '#333', 'stroke-width': 0.8
+  }));
+
+  // Left wall top
+  const lwTop = [iso(0, sl, sh), iso(sw, sl, sh), iso(sw, sl - st, sh), iso(0, sl - st, sh)];
+  svg.appendChild(svgEl('polygon', {
+    points: lwTop.map(p => p.join(',')).join(' '),
+    fill: '#d0c098', stroke: '#333', 'stroke-width': 0.8
+  }));
+
+  // Right wall top
+  const rwTop = [iso(0, 0, sh), iso(sw, 0, sh), iso(sw, st, sh), iso(0, st, sh)];
+  svg.appendChild(svgEl('polygon', {
+    points: rwTop.map(p => p.join(',')).join(' '),
+    fill: '#d8c8a8', stroke: '#333', 'stroke-width': 0.5, 'stroke-dasharray': '2,1'
+  }));
+
+  // Front wall top
+  let fwTopPoints;
+  if (d.scoopFront) {
+    // Scoop on front wall - lower the front wall center
+    const sd = d.scoopD * scale;
+    const scoopH = sh - sd;
+    // Front top edge with scoop curve
+    const p1 = iso(sw, 0, sh);
+    const p2 = iso(sw, sl * 0.1, scoopH);
+    const p3 = iso(sw, sl * 0.5, scoopH);
+    const p4 = iso(sw, sl * 0.9, scoopH);
+    const p5 = iso(sw, sl, sh);
+    const p6 = iso(sw, sl, sh);
+    const p7 = iso(sw, sl - st, sh);
+    const p8 = iso(sw - st, sl - st, sh);
+    const p9 = iso(sw - st, 0 + st, sh);
+    const p10 = iso(sw, st, sh);
+
+    // Draw front wall top with scoop indication
+    const fwt = [iso(sw, 0, sh), iso(sw, sl, sh), iso(sw - st, sl, sh), iso(sw - st, 0, sh)];
+    svg.appendChild(svgEl('polygon', {
+      points: fwt.map(p => p.join(',')).join(' '),
+      fill: '#e0d4bc', stroke: '#333', 'stroke-width': 0.8
+    }));
+
+    // Scoop arc line on front face
+    const sc1 = iso(sw, sl * 0.05, sh);
+    const sc2 = iso(sw, sl * 0.5, sh - sd);
+    const sc3 = iso(sw, sl * 0.95, sh);
+    svg.appendChild(svgEl('path', {
+      d: `M${sc1[0]},${sc1[1]} Q${sc2[0]},${sc2[1]} ${sc3[0]},${sc3[1]}`,
+      fill: 'none', stroke: '#e63946', 'stroke-width': 1, 'stroke-dasharray': '4,2'
+    }));
+
+    // Scoop label
+    const sclbl = iso(sw + 2, sl * 0.5, sh - sd / 2);
+    const sct = svgEl('text', {
+      x: sclbl[0] + 10, y: sclbl[1],
+      class: 'feature-label', 'font-size': '8px'
+    });
+    sct.textContent = 'SCOOP';
+    svg.appendChild(sct);
+  } else {
+    const fwt = [iso(sw, 0, sh), iso(sw, sl, sh), iso(sw - st, sl, sh), iso(sw - st, 0, sh)];
+    svg.appendChild(svgEl('polygon', {
+      points: fwt.map(p => p.join(',')).join(' '),
+      fill: '#e0d4bc', stroke: '#333', 'stroke-width': 0.8
+    }));
+  }
+
+  // Pull cutout on front face
+  if (d.pullCutout) {
+    const pw = d.pullW * scale;
+    const pd = d.pullD * scale;
+    const startY = (sl - pw) / 2;
+    const p1 = iso(sw, startY, sh);
+    const p2 = iso(sw, startY, sh - pd);
+    const p3 = iso(sw, startY + pw, sh - pd);
+    const p4 = iso(sw, startY + pw, sh);
+    svg.appendChild(svgEl('polygon', {
+      points: [p1, p2, p3, p4].map(p => p.join(',')).join(' '),
+      fill: '#f5f5f5', stroke: '#333', 'stroke-width': 0.8
+    }));
+    // Label
+    const plbl = iso(sw + 1, startY + pw / 2, sh - pd / 2);
+    const plt = svgEl('text', {
+      x: plbl[0] + 10, y: plbl[1],
+      class: 'feature-label', 'font-size': '8px'
+    });
+    plt.textContent = 'PULL CUTOUT';
+    svg.appendChild(plt);
+  }
+
+  // Undermount notches on back wall bottom
+  if (d.undermountNotch) {
+    const nw = 2.5 * scale;
+    const nh = 0.5 * scale;
+    // Left notch (back wall, left side)
+    const n1 = [iso(0, 0, 0), iso(0, nw, 0), iso(0, nw, nh), iso(0, 0, nh)];
+    svg.appendChild(svgEl('polygon', {
+      points: n1.map(p => p.join(',')).join(' '),
+      fill: '#f5f5f5', stroke: '#333', 'stroke-width': 0.6
+    }));
+    // Right notch
+    const n2 = [iso(0, sl - nw, 0), iso(0, sl, 0), iso(0, sl, nh), iso(0, sl - nw, nh)];
+    svg.appendChild(svgEl('polygon', {
+      points: n2.map(p => p.join(',')).join(' '),
+      fill: '#f5f5f5', stroke: '#333', 'stroke-width': 0.6
+    }));
+  }
+
+  // Dovetail markers on visible corners
+  const dtCount = Math.min(Math.floor(d.H / 2), 4);
+  for (let i = 0; i < dtCount; i++) {
+    const z1 = (i * 2 + 0.5) * scale + st;
+    const z2 = z1 + scale * 0.8;
+    if (z2 > sh) break;
+
+    // Front-left corner dovetails
+    const dt = [iso(sw, sl, z1), iso(sw, sl + st * 0.5, z1 + (z2 - z1) * 0.2), iso(sw, sl + st * 0.5, z2 - (z2 - z1) * 0.2), iso(sw, sl, z2)];
+    svg.appendChild(svgEl('polygon', {
+      points: dt.map(p => p.join(',')).join(' '),
+      fill: 'none', stroke: '#8B4513', 'stroke-width': 0.6
+    }));
+
+    // Back-left corner
+    const dt2 = [iso(0, sl, z1), iso(0, sl + st * 0.5, z1 + (z2 - z1) * 0.2), iso(0, sl + st * 0.5, z2 - (z2 - z1) * 0.2), iso(0, sl, z2)];
+    svg.appendChild(svgEl('polygon', {
+      points: dt2.map(p => p.join(',')).join(' '),
+      fill: 'none', stroke: '#8B4513', 'stroke-width': 0.6
+    }));
+  }
+
+  // Dimension lines for iso view
+  // Width along front bottom
+  const dw1 = iso(sw, 0, 0), dw2 = iso(sw, sl, 0);
+  const dwm1 = [dw1[0] + 15, dw1[1] + 8];
+  const dwm2 = [dw2[0] + 15, dw2[1] + 8];
+  svg.appendChild(svgEl('line', { x1: dw1[0], y1: dw1[1], x2: dwm1[0], y2: dwm1[1], class: 'dim-line' }));
+  svg.appendChild(svgEl('line', { x1: dw2[0], y1: dw2[1], x2: dwm2[0], y2: dwm2[1], class: 'dim-line' }));
+  svg.appendChild(svgEl('line', { x1: dwm1[0], y1: dwm1[1], x2: dwm2[0], y2: dwm2[1], class: 'dim-line' }));
+  const wLabel = svgEl('text', {
+    x: (dwm1[0] + dwm2[0]) / 2 + 8,
+    y: (dwm1[1] + dwm2[1]) / 2 - 2,
+    class: 'dim-text'
+  });
+  wLabel.textContent = fmtDim(d.W);
+  svg.appendChild(wLabel);
+
+  // Length along right bottom
+  const dl1 = iso(sw, 0, 0), dl2 = iso(0, 0, 0);
+  const dlm1 = [dl1[0] + 15, dl1[1] + 8];
+  const dlm2 = [dl2[0] + 15, dl2[1] + 8];
+  svg.appendChild(svgEl('line', { x1: dl1[0], y1: dl1[1], x2: dlm1[0], y2: dlm1[1], class: 'dim-line' }));
+  svg.appendChild(svgEl('line', { x1: dl2[0], y1: dl2[1], x2: dlm2[0], y2: dlm2[1], class: 'dim-line' }));
+  svg.appendChild(svgEl('line', { x1: dlm1[0], y1: dlm1[1], x2: dlm2[0], y2: dlm2[1], class: 'dim-line' }));
+  const lLabel = svgEl('text', {
+    x: (dlm1[0] + dlm2[0]) / 2 + 8,
+    y: (dlm1[1] + dlm2[1]) / 2 - 2,
+    class: 'dim-text'
+  });
+  lLabel.textContent = fmtDim(d.L);
+  svg.appendChild(lLabel);
+
+  // Height along front-left vertical
+  const dh1 = iso(sw, sl, 0), dh2 = iso(sw, sl, sh);
+  const dhOff = 18;
+  svg.appendChild(svgEl('line', { x1: dh1[0] + dhOff, y1: dh1[1], x2: dh1[0], y2: dh1[1], class: 'dim-line' }));
+  svg.appendChild(svgEl('line', { x1: dh2[0] + dhOff, y1: dh2[1], x2: dh2[0], y2: dh2[1], class: 'dim-line' }));
+  svg.appendChild(svgEl('line', { x1: dh1[0] + dhOff, y1: dh1[1], x2: dh2[0] + dhOff, y2: dh2[1], class: 'dim-line' }));
+  const hLabel = svgEl('text', {
+    x: dh1[0] + dhOff + 4,
+    y: (dh1[1] + dh2[1]) / 2,
+    class: 'dim-text',
+    'text-anchor': 'start'
+  });
+  hLabel.textContent = fmtDim(d.H);
+  svg.appendChild(hLabel);
+
+  container.appendChild(svg);
+}
+
+
+// ============================================================
+// SPEC TABLE
+// ============================================================
+function updateSpecTable(d) {
+  const body = document.getElementById('specBody');
+  body.innerHTML = '';
+
+  const rows = [
+    ['Width', fmtDim(d.W), 'Pull Cutout', d.pullCutout ? `ON (${fmtDim(d.pullW)} x ${fmtDim(d.pullD)})` : 'OFF'],
+    ['Length / Depth', fmtDim(d.L), 'Scoop Front', d.scoopFront ? `ON (${fmtDim(d.scoopD)} deep)` : 'OFF'],
+    ['Height', fmtDim(d.H), 'Undermount Notches', d.undermountNotch ? 'ON' : 'OFF'],
+    ['Material Thickness', fmtDim(d.T), 'Joinery', 'Dovetail'],
+  ];
+
+  for (const r of rows) {
+    const tr = document.createElement('tr');
+    for (const c of r) {
+      const td = document.createElement('td');
+      td.textContent = c;
+      tr.appendChild(td);
+    }
+    body.appendChild(tr);
+  }
+}
+
+
+// ============================================================
+// MAIN UPDATE
+// ============================================================
+function updateDrawing() {
+  const d = getInputs();
+  drawTopView(d);
+  drawFrontView(d);
+  drawIsoView(d);
+  updateSpecTable(d);
+}
+
+// ============================================================
+// FILEMAKER INTEGRATION
+// ============================================================
+// Call this function from FileMaker to set all values at once.
+// In FileMaker, construct your Web Viewer URL like:
+//
+// "data:text/html," & GetAsURLEncoded(
+//   Substitute( YourHTMLField ;
+//     ["{{WIDTH}}" ; Width] ;
+//     ["{{LENGTH}}" ; Length] ;
+//     ["{{HEIGHT}}" ; Height] ;
+//     ["{{THICKNESS}}" ; Thickness]
+//   )
+// )
+//
+// Or use FileMaker.PerformScript to call back and invoke:
+//
+//   setFromFileMaker({
+//     width: {{WIDTH}},
+//     length: {{LENGTH}},
+//     height: {{HEIGHT}},
+//     thickness: {{THICKNESS}},
+//     pullCutout: true,
+//     pullWidth: 4,
+//     pullDepth: 1.5,
+//     scoopFront: true,
+//     scoopDepth: 1,
+//     undermountNotch: true,
+//     orderNumber: "ORD-12345",
+//     customerName: "John Smith"
+//   });
+
+function setFromFileMaker(params) {
+  if (params.width) document.getElementById('dimWidth').value = params.width;
+  if (params.length) document.getElementById('dimLength').value = params.length;
+  if (params.height) document.getElementById('dimHeight').value = params.height;
+  if (params.thickness) document.getElementById('dimThick').value = params.thickness;
+
+  if (params.pullCutout !== undefined) document.getElementById('togPull').checked = params.pullCutout;
+  if (params.pullWidth) document.getElementById('pullWidth').value = params.pullWidth;
+  if (params.pullDepth) document.getElementById('pullDepth').value = params.pullDepth;
+
+  if (params.scoopFront !== undefined) document.getElementById('togScoop').checked = params.scoopFront;
+  if (params.scoopDepth) document.getElementById('scoopDepth').value = params.scoopDepth;
+
+  if (params.undermountNotch !== undefined) document.getElementById('togNotch').checked = params.undermountNotch;
+
+  if (params.orderNumber) {
+    document.getElementById('orderDisplay').textContent = 'Order: ' + params.orderNumber;
+  }
+
+  updateDrawing();
+}
+
+// ============================================================
+// URL PARAMETER SUPPORT (for FileMaker file:// approach)
+// ============================================================
+function loadFromURL() {
+  const params = new URLSearchParams(window.location.search);
+  if (params.has('width')) {
+    setFromFileMaker({
+      width: parseFloat(params.get('width')) || 24,
+      length: parseFloat(params.get('length')) || 21,
+      height: parseFloat(params.get('height')) || 7,
+      thickness: parseFloat(params.get('thickness')) || 0.5625,
+      pullCutout: params.get('pullCutout') === '1' || params.get('pullCutout') === 'true',
+      pullWidth: parseFloat(params.get('pullWidth')) || 4,
+      pullDepth: parseFloat(params.get('pullDepth')) || 1.5,
+      scoopFront: params.get('scoopFront') === '1' || params.get('scoopFront') === 'true',
+      scoopDepth: parseFloat(params.get('scoopDepth')) || 1,
+      undermountNotch: params.get('undermountNotch') === '1' || params.get('undermountNotch') === 'true',
+      orderNumber: params.get('order') || ''
+    });
+  }
+}
+
+// ============================================================
+// INIT
+// ============================================================
+document.getElementById('dateDisplay').textContent = new Date().toLocaleDateString();
+window.addEventListener('resize', updateDrawing);
+updateDrawing();
+loadFromURL();
+</script>
+</body>
+</html>
