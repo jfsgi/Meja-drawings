@@ -1284,6 +1284,9 @@ function loadSampleData() {
   }
 
   renderAllGrids();
+
+  // Fallback: show page after 1 second even if FM hasn't sent data yet
+  setTimeout(function() { document.body.classList.add('loaded'); }, 1000);
 })();
 </script>
 </body>
