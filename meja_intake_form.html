@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MEJA Designs - Quote Intake</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Segoe UI', Arial, sans-serif; background: #f5f5f5; color: #333; font-size: 13px; }
+
+/* Header */
+.header {
+  background: #1a1a2e; color: #fff; padding: 10px 20px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.header-left { display: flex; align-items: center; gap: 12px; }
+.header-left img { height: 40px; width: auto; }
+.header-left h1 { font-size: 18px; letter-spacing: 2px; margin: 0; }
+.header-left .subtitle { font-size: 11px; color: #aaa; letter-spacing: 1px; }
+.header-right { text-align: right; font-size: 12px; color: #ccc; }
+.header-right .quote-num { font-size: 16px; font-weight: bold; color: #fff; }
+
+/* Main content */
+.content { padding: 12px; max-width: 1200px; margin: 0 auto; }
+
+/* Section panels */
+.section-panel {
+  background: #fff; border: 1px solid #ddd; border-radius: 6px;
+  margin-bottom: 12px; overflow: hidden;
+}
+.section-title {
+  background: #eee; padding: 8px 14px; font-size: 12px; font-weight: 700;
+  text-transform: uppercase; color: #555; letter-spacing: 1px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.section-body { padding: 0; }
+
+/* Grid tables */
+.intake-grid { width: 100%; border-collapse: collapse; }
+.intake-grid thead th {
+  background: #f8f8f8; padding: 6px 8px; font-size: 10px; font-weight: 700;
+  text-transform: uppercase; color: #888; letter-spacing: 0.5px;
+  border-bottom: 2px solid #ddd; text-align: center; white-space: nowrap;
+}
+.intake-grid tbody tr { border-bottom: 1px solid #eee; transition: background 0.15s; }
+.intake-grid tbody tr:nth-child(even) { background: #faf7f2; }
+.intake-grid tbody tr:hover { background: #f0ebe0; }
+.intake-grid tbody tr.row-new { border-left: 3px solid #4CAF50; }
+.intake-grid tbody tr.row-dirty { border-left: 3px solid #1a1a2e; }
+.intake-grid tbody tr.row-linked { }
+.intake-grid td { padding: 4px 4px; text-align: center; vertical-align: middle; }
+.intake-grid td.row-num { font-size: 11px; color: #999; width: 30px; }
+.intake-grid td.status-cell { width: 24px; }
+.intake-grid td.actions-cell { width: 36px; }
+
+/* Grid inputs */
+.intake-grid input[type="number"],
+.intake-grid input[type="text"],
+.intake-grid select {
+  width: 100%; padding: 5px 6px; border: 1px solid #ccc; border-radius: 3px;
+  font-size: 13px; font-family: inherit; text-align: center;
+  background: #fff; transition: border-color 0.2s;
+}
+.intake-grid input:focus, .intake-grid select:focus {
+  outline: none; border-color: #1a1a2e; box-shadow: 0 0 0 2px rgba(26,26,46,0.15);
+}
+.intake-grid input.invalid { border-color: #e63946; background: #fff5f5; }
+.intake-grid input.linked { background: #f0f0f0; color: #888; }
+
+/* Column widths */
+.col-qty { width: 60px; }
+.col-dim { width: 80px; }
+.col-stile { width: 70px; }
+.col-rail { width: 70px; }
+.col-style { width: 120px; }
+
+/* Buttons */
+.btn {
+  padding: 6px 14px; border: none; border-radius: 4px; font-size: 12px;
+  font-weight: 600; cursor: pointer; transition: all 0.2s; font-family: inherit;
+}
+.btn-primary { background: #1a1a2e; color: #fff; }
+.btn-primary:hover { background: #2a2a4e; }
+.btn-add {
+  background: transparent; color: #1a1a2e; border: 1px dashed #1a1a2e;
+  padding: 5px 12px; font-size: 11px;
+}
+.btn-add:hover { background: #f0f0f5; border-style: solid; }
+.btn-danger {
+  background: transparent; color: #e63946; border: 1px solid #e63946;
+  padding: 3px 8px; font-size: 11px; border-radius: 3px;
+}
+.btn-danger:hover { background: #e63946; color: #fff; }
+.btn-green {
+  background: #2d6a4f; color: #fff; padding: 6px 14px; font-size: 12px;
+}
+.btn-green:hover { background: #3a8463; }
+
+/* Action bar below grid */
+.grid-actions {
+  padding: 8px 12px; display: flex; align-items: center; gap: 8px;
+  border-top: 1px solid #eee; background: #fafafa;
+}
+
+/* Status indicator */
+.status-dot {
+  width: 8px; height: 8px; border-radius: 50%; display: inline-block;
+}
+.status-dot.linked { background: #4CAF50; }
+.status-dot.pending { background: #ff9800; }
+
+/* Drawer Box Unit section */
+.box-unit-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 0;
+  padding: 0;
+}
+.box-unit-group {
+  padding: 12px 16px; border-bottom: 1px solid #eee;
+}
+.box-unit-group:nth-child(odd) { border-right: 1px solid #eee; }
+.box-unit-group.full-width { grid-column: 1 / -1; }
+.box-unit-group h3 {
+  font-size: 10px; text-transform: uppercase; color: #888;
+  letter-spacing: 1px; margin-bottom: 8px; font-weight: 700;
+}
+.field-row {
+  display: flex; align-items: center; margin-bottom: 5px; gap: 8px;
+}
+.field-label {
+  font-size: 11px; color: #666; min-width: 140px; text-align: right;
+}
+.field-value {
+  font-size: 13px; font-weight: 600; color: #333; padding: 3px 8px;
+  background: #f8f8f8; border-radius: 3px; min-width: 60px; text-align: center;
+  border: 1px solid #e8e8e8;
+}
+.field-value.editable {
+  background: #fff; border-color: #ccc; cursor: text;
+}
+.field-value input, .field-value select {
+  border: none; background: transparent; font-size: 13px; font-weight: 600;
+  text-align: center; width: 100%; font-family: inherit; outline: none;
+}
+
+/* Drawer heights sub-grid */
+.drawer-heights-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 6px; margin-top: 6px;
+}
+.drawer-height-card {
+  background: #f8f8f8; border: 1px solid #e8e8e8; border-radius: 4px;
+  padding: 8px; text-align: center;
+}
+.drawer-height-card .dh-label {
+  font-size: 9px; text-transform: uppercase; color: #888; margin-bottom: 4px;
+  letter-spacing: 0.5px;
+}
+.drawer-height-card .dh-value {
+  font-size: 14px; font-weight: 700; color: #333;
+}
+
+/* Empty state */
+.empty-row {
+  text-align: center; padding: 20px; color: #bbb; font-style: italic; font-size: 12px;
+}
+
+/* Debug panel */
+.debug-panel {
+  display: none; position: fixed; bottom: 0; right: 0; width: 400px; max-height: 50vh;
+  background: #1a1a2e; color: #0f0; font-family: monospace; font-size: 10px;
+  overflow: auto; padding: 10px; z-index: 1000; border-top-left-radius: 8px;
+}
+.debug-panel.visible { display: block; }
+.debug-panel h4 { color: #fff; margin-bottom: 6px; }
+.debug-panel pre { white-space: pre-wrap; word-break: break-all; }
+.debug-panel .debug-btn {
+  background: #333; color: #0f0; border: 1px solid #0f0; padding: 3px 8px;
+  cursor: pointer; font-size: 10px; margin: 2px; font-family: monospace;
+}
+
+/* Print */
+@media print {
+  .header { padding: 6px 12px; }
+  .btn, .grid-actions, .debug-panel { display: none !important; }
+  .intake-grid input, .intake-grid select { border: none; background: none; }
+  .section-panel { break-inside: avoid; }
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-left">
+    <img src="meja_logo.png" alt="MEJA Designs">
+    <div>
+      <h1>MEJA DESIGNS</h1>
+      <div class="subtitle">Quote Intake Form</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="quote-num" id="quoteDisplay">Quote #</div>
+    <div id="customerDisplay"></div>
+    <div id="dateDisplay"></div>
+  </div>
+</div>
+
+<div class="content">
+
+  <!-- DRAWER INTAKE -->
+  <div class="section-panel">
+    <div class="section-title">
+      <span>Drawer Intake</span>
+      <span id="drawerCount" style="font-weight:400;font-size:11px;color:#999"></span>
+    </div>
+    <div class="section-body">
+      <table class="intake-grid" id="drawerIntakeGrid">
+        <thead>
+          <tr>
+            <th style="width:30px">#</th>
+            <th style="width:24px"></th>
+            <th class="col-qty">Qnty</th>
+            <th class="col-dim">Width</th>
+            <th class="col-dim">Length</th>
+            <th class="col-dim">Height</th>
+            <th style="width:36px"></th>
+          </tr>
+        </thead>
+        <tbody id="drawerIntakeBody"></tbody>
+      </table>
+      <div id="drawerEmptyMsg" class="empty-row">No drawer intake rows. Click "Add Row" to start.</div>
+      <div class="grid-actions">
+        <button class="btn btn-add" onclick="addRow('drawerIntake')">+ Add Row</button>
+        <div style="flex:1"></div>
+        <button class="btn btn-green" onclick="callFM('Add Drawer Intake to Quote')">Add Drawer Intake to Quote</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- DOOR INTAKE -->
+  <div class="section-panel">
+    <div class="section-title">
+      <span>Door Intake</span>
+      <span id="doorCount" style="font-weight:400;font-size:11px;color:#999"></span>
+    </div>
+    <div class="section-body">
+      <table class="intake-grid" id="doorIntakeGrid">
+        <thead>
+          <tr>
+            <th style="width:30px">#</th>
+            <th style="width:24px"></th>
+            <th class="col-qty">Qnty</th>
+            <th class="col-dim">Width</th>
+            <th class="col-dim">Tall</th>
+            <th class="col-stile">Stile</th>
+            <th class="col-rail">Rail</th>
+            <th style="width:36px"></th>
+          </tr>
+        </thead>
+        <tbody id="doorIntakeBody"></tbody>
+      </table>
+      <div id="doorEmptyMsg" class="empty-row">No door intake rows. Click "Add Row" to start.</div>
+      <div class="grid-actions">
+        <button class="btn btn-add" onclick="addRow('doorIntake')">+ Add Row</button>
+        <div style="flex:1"></div>
+        <button class="btn btn-green" onclick="callFM('Add Door Intake to Quote')">Add Door Intake to Quote</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- DRAWER FRONT / BOX LID INTAKE -->
+  <div class="section-panel">
+    <div class="section-title">
+      <span>Drawer Front / Box Lid Intake</span>
+      <span id="frontCount" style="font-weight:400;font-size:11px;color:#999"></span>
+    </div>
+    <div class="section-body">
+      <table class="intake-grid" id="frontIntakeGrid">
+        <thead>
+          <tr>
+            <th style="width:30px">#</th>
+            <th style="width:24px"></th>
+            <th class="col-qty">Qnty</th>
+            <th class="col-dim">Width</th>
+            <th class="col-dim">Tall</th>
+            <th class="col-stile">Stile</th>
+            <th class="col-rail">Rail</th>
+            <th class="col-style">Style</th>
+            <th style="width:36px"></th>
+          </tr>
+        </thead>
+        <tbody id="frontIntakeBody"></tbody>
+      </table>
+      <div id="frontEmptyMsg" class="empty-row">No drawer front intake rows. Click "Add Row" to start.</div>
+      <div class="grid-actions">
+        <button class="btn btn-add" onclick="addRow('drawerFrontIntake')">+ Add Row</button>
+        <div style="flex:1"></div>
+        <button class="btn btn-green" onclick="callFM('Add Drawer Front Intake to Quote')">Add Drawer Front Intake to Quote</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- DRAWER BOX UNIT -->
+  <div class="section-panel">
+    <div class="section-title">
+      <span>Drawer Box Unit</span>
+    </div>
+    <div class="section-body">
+      <div class="box-unit-grid" id="boxUnitDisplay">
+        <!-- Outer Box -->
+        <div class="box-unit-group">
+          <h3>Outer Box</h3>
+          <div class="field-row"><span class="field-label">Width</span><span class="field-value" id="bu_OBWidth">-</span></div>
+          <div class="field-row"><span class="field-label">Length</span><span class="field-value" id="bu_OBLength">-</span></div>
+          <div class="field-row"><span class="field-label">Height</span><span class="field-value" id="bu_OBHeight">-</span></div>
+          <div class="field-row"><span class="field-label">Material Thickness</span><span class="field-value" id="bu_OBThickness">-</span></div>
+          <div class="field-row"><span class="field-label">Reveal</span><span class="field-value" id="bu_OBReveal">-</span></div>
+          <div class="field-row"><span class="field-label">Back Offset</span><span class="field-value" id="bu_OBBackOffset">-</span></div>
+          <div class="field-row"><span class="field-label">Back Thickness</span><span class="field-value" id="bu_OBBackThickness">-</span></div>
+          <div class="field-row"><span class="field-label">Drawer Length Clearance</span><span class="field-value" id="bu_OBLenClearance">-</span></div>
+        </div>
+        <!-- Drawer -->
+        <div class="box-unit-group">
+          <h3>Drawer</h3>
+          <div class="field-row"><span class="field-label">Width (Internal)</span><span class="field-value" id="bu_DWidth">-</span></div>
+          <div class="field-row"><span class="field-label">Length (Internal)</span><span class="field-value" id="bu_DLength">-</span></div>
+          <div class="field-row"><span class="field-label">Height (Auto)</span><span class="field-value" id="bu_DHeight">-</span></div>
+          <div class="field-row"><span class="field-label">Slide Motion</span><span class="field-value" id="bu_SlideMotion">-</span></div>
+          <div class="field-row"><span class="field-label">Number of Drawers</span><span class="field-value" id="bu_NumDrawers">-</span></div>
+        </div>
+        <!-- Front -->
+        <div class="box-unit-group">
+          <h3>Drawer Front</h3>
+          <div class="field-row"><span class="field-label">Front Width</span><span class="field-value" id="bu_FrontWidth">-</span></div>
+          <div class="field-row"><span class="field-label">Front Style</span><span class="field-value" id="bu_FrontStyle">-</span></div>
+          <div class="field-row"><span class="field-label">Front Auto Height</span><span class="field-value" id="bu_FrontAutoH">-</span></div>
+          <div class="field-row"><span class="field-label">Front Height Top</span><span class="field-value" id="bu_FrontTopH">-</span></div>
+        </div>
+        <!-- Slides -->
+        <div class="box-unit-group">
+          <h3>Slides &amp; Hardware</h3>
+          <div class="field-row"><span class="field-label">Slide Motion Type</span><span class="field-value" id="bu_SlideType">-</span></div>
+          <div class="field-row"><span class="field-label">Slide Width</span><span class="field-value" id="bu_SlideWidth">-</span></div>
+        </div>
+        <!-- Drawer Heights -->
+        <div class="box-unit-group full-width">
+          <h3>Individual Drawer Heights</h3>
+          <div class="drawer-heights-grid" id="drawerHeightsGrid">
+            <div style="color:#bbb;font-style:italic;font-size:12px">No drawer data loaded</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- DEBUG PANEL -->
+<div class="debug-panel" id="debugPanel">
+  <h4>Debug Console <button class="debug-btn" onclick="toggleDebug()">Close</button></h4>
+  <button class="debug-btn" onclick="loadSampleData()">Load Sample Data</button>
+  <button class="debug-btn" onclick="showState()">Show State</button>
+  <button class="debug-btn" onclick="clearAll()">Clear All</button>
+  <pre id="debugLog"></pre>
+</div>
+
+<script>
+// ============================================================
+// STATE
+// ============================================================
+var state = {
+  quoteId: null,
+  quoteNumber: '',
+  customerName: '',
+  drawerIntake: [],
+  doorIntake: [],
+  drawerFrontIntake: [],
+  drawerBoxUnit: {},
+  _deletedRows: { drawerIntake: [], doorIntake: [], drawerFrontIntake: [] }
+};
+
+var gridConfig = {
+  drawerIntake: {
+    bodyId: 'drawerIntakeBody',
+    emptyId: 'drawerEmptyMsg',
+    countId: 'drawerCount',
+    fields: [
+      { key: 'Quantity', type: 'number', step: '1', min: '1', cls: 'col-qty' },
+      { key: 'Width', type: 'number', step: '0.125', min: '0', cls: 'col-dim' },
+      { key: 'Length', type: 'number', step: '0.125', min: '0', cls: 'col-dim' },
+      { key: 'Height', type: 'number', step: '0.125', min: '0', cls: 'col-dim' }
+    ],
+    defaults: { Quantity: 1, Width: 0, Length: 0, Height: 0 }
+  },
+  doorIntake: {
+    bodyId: 'doorIntakeBody',
+    emptyId: 'doorEmptyMsg',
+    countId: 'doorCount',
+    fields: [
+      { key: 'Quantity', type: 'number', step: '1', min: '1', cls: 'col-qty' },
+      { key: 'Width', type: 'number', step: '0.125', min: '0', cls: 'col-dim' },
+      { key: 'Length', type: 'number', step: '0.125', min: '0', cls: 'col-dim' },
+      { key: 'StileWidth', type: 'number', step: '0.0625', min: '0', cls: 'col-stile' },
+      { key: 'RailWidth', type: 'number', step: '0.0625', min: '0', cls: 'col-rail' }
+    ],
+    defaults: { Quantity: 1, Width: 0, Length: 0, StileWidth: 2.25, RailWidth: 2.25 }
+  },
+  drawerFrontIntake: {
+    bodyId: 'frontIntakeBody',
+    emptyId: 'frontEmptyMsg',
+    countId: 'frontCount',
+    fields: [
+      { key: 'Quantity', type: 'number', step: '1', min: '1', cls: 'col-qty' },
+      { key: 'Width', type: 'number', step: '0.125', min: '0', cls: 'col-dim' },
+      { key: 'Length', type: 'number', step: '0.125', min: '0', cls: 'col-dim' },
+      { key: 'StileWidth', type: 'number', step: '0.0625', min: '0', cls: 'col-stile' },
+      { key: 'RailWidth', type: 'number', step: '0.0625', min: '0', cls: 'col-rail' },
+      { key: 'Type', type: 'select', options: ['', 'Flat Panel', 'Five Piece', 'Box Lid'], cls: 'col-style' }
+    ],
+    defaults: { Quantity: 1, Width: 0, Length: 0, StileWidth: 2.25, RailWidth: 2.25, Type: '' }
+  }
+};
+
+
+// ============================================================
+// GRID RENDERING
+// ============================================================
+function renderGrid(tableType) {
+  var cfg = gridConfig[tableType];
+  var rows = state[tableType];
+  var tbody = document.getElementById(cfg.bodyId);
+  var emptyMsg = document.getElementById(cfg.emptyId);
+  var countEl = document.getElementById(cfg.countId);
+
+  tbody.innerHTML = '';
+  emptyMsg.style.display = rows.length === 0 ? 'block' : 'none';
+  countEl.textContent = rows.length > 0 ? rows.length + ' row' + (rows.length > 1 ? 's' : '') : '';
+
+  for (var i = 0; i < rows.length; i++) {
+    var row = rows[i];
+    var tr = document.createElement('tr');
+
+    // Row state classes
+    if (row._isNew) tr.className = 'row-new';
+    else if (row._isDirty) tr.className = 'row-dirty';
+
+    // Row number
+    var tdNum = document.createElement('td');
+    tdNum.className = 'row-num';
+    tdNum.textContent = i + 1;
+    tr.appendChild(tdNum);
+
+    // Status dot
+    var tdStatus = document.createElement('td');
+    tdStatus.className = 'status-cell';
+    var dot = document.createElement('span');
+    dot.className = 'status-dot ' + (row.__fk_LineItemID ? 'linked' : 'pending');
+    dot.title = row.__fk_LineItemID ? 'Linked to line item' : 'Not yet added to quote';
+    tdStatus.appendChild(dot);
+    tr.appendChild(tdStatus);
+
+    // Field cells
+    for (var f = 0; f < cfg.fields.length; f++) {
+      var field = cfg.fields[f];
+      var td = document.createElement('td');
+
+      if (field.type === 'select') {
+        var sel = document.createElement('select');
+        sel.setAttribute('data-table', tableType);
+        sel.setAttribute('data-index', i);
+        sel.setAttribute('data-field', field.key);
+        for (var o = 0; o < field.options.length; o++) {
+          var opt = document.createElement('option');
+          opt.value = field.options[o];
+          opt.textContent = field.options[o] || '-- Select --';
+          if (row[field.key] === field.options[o]) opt.selected = true;
+          sel.appendChild(opt);
+        }
+        sel.onchange = handleFieldChange;
+        if (row.__fk_LineItemID) { sel.disabled = true; sel.classList.add('linked'); }
+        td.appendChild(sel);
+      } else {
+        var inp = document.createElement('input');
+        inp.type = field.type;
+        inp.step = field.step || '1';
+        if (field.min !== undefined) inp.min = field.min;
+        inp.value = row[field.key] || '';
+        inp.setAttribute('data-table', tableType);
+        inp.setAttribute('data-index', i);
+        inp.setAttribute('data-field', field.key);
+        inp.onchange = handleFieldChange;
+        inp.onblur = handleFieldChange;
+        if (row.__fk_LineItemID) { inp.readOnly = true; inp.classList.add('linked'); }
+        td.appendChild(inp);
+      }
+      tr.appendChild(td);
+    }
+
+    // Delete button
+    var tdDel = document.createElement('td');
+    tdDel.className = 'actions-cell';
+    if (!row.__fk_LineItemID) {
+      var delBtn = document.createElement('button');
+      delBtn.className = 'btn-danger';
+      delBtn.textContent = 'X';
+      delBtn.setAttribute('data-table', tableType);
+      delBtn.setAttribute('data-index', i);
+      delBtn.onclick = handleDelete;
+      tdDel.appendChild(delBtn);
+    }
+    tr.appendChild(tdDel);
+
+    tbody.appendChild(tr);
+  }
+}
+
+function renderAllGrids() {
+  renderGrid('drawerIntake');
+  renderGrid('doorIntake');
+  renderGrid('drawerFrontIntake');
+}
+
+
+// ============================================================
+// GRID ACTIONS
+// ============================================================
+function handleFieldChange(e) {
+  var el = e.target;
+  var tableType = el.getAttribute('data-table');
+  var index = parseInt(el.getAttribute('data-index'));
+  var field = el.getAttribute('data-field');
+  var value = el.type === 'number' ? parseFloat(el.value) || 0 : el.value;
+
+  state[tableType][index][field] = value;
+  state[tableType][index]._isDirty = true;
+
+  // Send to FM
+  if (typeof FileMaker !== 'undefined' && state[tableType][index]._pk) {
+    FileMaker.PerformScript('WebIntake_UpdateField', JSON.stringify({
+      table: tableType,
+      pk: state[tableType][index]._pk,
+      field: field,
+      value: value
+    }));
+  }
+
+  debugMsg('Field changed: ' + tableType + '[' + index + '].' + field + ' = ' + value);
+}
+
+function addRow(tableType) {
+  var cfg = gridConfig[tableType];
+  var newRow = {
+    _pk: null,
+    __fk_Quotes: state.quoteId,
+    __fk_LineItemID: null,
+    _isNew: true,
+    _isDirty: true
+  };
+  // Apply defaults
+  var keys = Object.keys(cfg.defaults);
+  for (var k = 0; k < keys.length; k++) {
+    newRow[keys[k]] = cfg.defaults[keys[k]];
+  }
+
+  state[tableType].push(newRow);
+  renderGrid(tableType);
+
+  // Tell FM to create a record
+  if (typeof FileMaker !== 'undefined') {
+    FileMaker.PerformScript('WebIntake_AddRow', JSON.stringify({
+      table: tableType,
+      quoteId: state.quoteId,
+      tempIndex: state[tableType].length - 1
+    }));
+  }
+
+  debugMsg('Added row to ' + tableType);
+
+  // Focus first input of new row
+  var tbody = document.getElementById(cfg.bodyId);
+  var lastRow = tbody.lastElementChild;
+  if (lastRow) {
+    var firstInput = lastRow.querySelector('input, select');
+    if (firstInput) firstInput.focus();
+  }
+}
+
+var deleteConfirmTimeout = null;
+function handleDelete(e) {
+  var btn = e.target;
+  var tableType = btn.getAttribute('data-table');
+  var index = parseInt(btn.getAttribute('data-index'));
+
+  if (btn.textContent === 'Sure?') {
+    var row = state[tableType][index];
+    if (row._pk) {
+      state._deletedRows[tableType].push(row._pk);
+      if (typeof FileMaker !== 'undefined') {
+        FileMaker.PerformScript('WebIntake_DeleteRow', JSON.stringify({
+          table: tableType,
+          pk: row._pk
+        }));
+      }
+    }
+    state[tableType].splice(index, 1);
+    renderGrid(tableType);
+    debugMsg('Deleted row ' + index + ' from ' + tableType);
+  } else {
+    btn.textContent = 'Sure?';
+    btn.style.background = '#e63946';
+    btn.style.color = '#fff';
+    setTimeout(function() {
+      btn.textContent = 'X';
+      btn.style.background = '';
+      btn.style.color = '';
+    }, 2000);
+  }
+}
+
+
+// ============================================================
+// DRAWER BOX UNIT DISPLAY
+// ============================================================
+function renderDrawerBoxUnit() {
+  var bu = state.drawerBoxUnit;
+  if (!bu || Object.keys(bu).length === 0) return;
+
+  setFieldValue('bu_OBWidth', bu.OuterBox_Width);
+  setFieldValue('bu_OBLength', bu.OuterBox_Length);
+  setFieldValue('bu_OBHeight', bu.OuterBox_Height);
+  setFieldValue('bu_OBThickness', bu.MaterialThickness);
+  setFieldValue('bu_OBReveal', bu.Reveal);
+  setFieldValue('bu_OBBackOffset', bu.BackOffset);
+  setFieldValue('bu_OBBackThickness', bu.BackThickness);
+  setFieldValue('bu_OBLenClearance', bu.DrawerLengthClearance);
+
+  setFieldValue('bu_DWidth', bu.Drawer_Width);
+  setFieldValue('bu_DLength', bu.Drawer_Length);
+  setFieldValue('bu_DHeight', bu.Drawer_Height);
+  setFieldValue('bu_SlideMotion', bu.DrawerSlideMotion);
+  setFieldValue('bu_NumDrawers', bu.NumberOfDrawers);
+
+  setFieldValue('bu_FrontWidth', bu.DrawerFront_Width);
+  setFieldValue('bu_FrontStyle', bu.DrawerFrontStyle);
+  setFieldValue('bu_FrontAutoH', bu.DrawerFront_AutoEach);
+  setFieldValue('bu_FrontTopH', bu.DrawerFront_Height_Top);
+
+  setFieldValue('bu_SlideType', bu.DrawerSlideMotion);
+  setFieldValue('bu_SlideWidth', bu.SlideWidth);
+
+  // Drawer heights
+  var container = document.getElementById('drawerHeightsGrid');
+  container.innerHTML = '';
+  var n = parseInt(bu.NumberOfDrawers) || 0;
+  if (n === 0) {
+    container.innerHTML = '<div style="color:#bbb;font-style:italic;font-size:12px">No drawers configured</div>';
+    return;
+  }
+  for (var i = 1; i <= n; i++) {
+    var manualH = bu['Drawer' + i + '_ManualHeight'] || 0;
+    var frontH = bu['Drawer' + i + 'Front_ManualHeight'] || 0;
+    var card = document.createElement('div');
+    card.className = 'drawer-height-card';
+    card.innerHTML =
+      '<div class="dh-label">Drawer ' + i + '</div>' +
+      '<div class="dh-value">' + fmtDim(manualH || bu.Drawer_Height) + '</div>' +
+      '<div class="dh-label" style="margin-top:4px">Front Height</div>' +
+      '<div class="dh-value" style="font-size:12px">' + fmtDim(frontH || bu.DrawerFront_AutoEach) + '</div>';
+    container.appendChild(card);
+  }
+}
+
+function setFieldValue(id, val) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  if (val === undefined || val === null || val === '') {
+    el.textContent = '-';
+  } else if (typeof val === 'number') {
+    el.textContent = fmtDim(val);
+  } else {
+    el.textContent = val;
+  }
+}
+
+function fmtDim(val) {
+  if (val === undefined || val === null || val === '' || val === 0) return '-';
+  val = parseFloat(val);
+  if (isNaN(val)) return '-';
+  var whole = Math.floor(val);
+  var frac = val - whole;
+  if (frac < 0.001) return whole + '"';
+  var sixteenths = Math.round(frac * 16);
+  if (sixteenths === 16) return (whole + 1) + '"';
+  if (sixteenths === 0) return whole + '"';
+  // Simplify fraction
+  var num = sixteenths, den = 16;
+  while (num % 2 === 0) { num /= 2; den /= 2; }
+  if (whole === 0) return num + '/' + den + '"';
+  return whole + '-' + num + '/' + den + '"';
+}
+
+
+// ============================================================
+// FILEMAKER INTEGRATION
+// ============================================================
+
+// FM calls this to load all data
+function loadIntakeData(jsonInput) {
+  var data = typeof jsonInput === 'string' ? JSON.parse(jsonInput) : jsonInput;
+
+  state.quoteId = data.quoteId || null;
+  state.quoteNumber = data.quoteNumber || '';
+  state.customerName = data.customerName || '';
+  state.drawerIntake = (data.drawerIntake || []).map(function(r) {
+    r._isNew = false; r._isDirty = false; return r;
+  });
+  state.doorIntake = (data.doorIntake || []).map(function(r) {
+    r._isNew = false; r._isDirty = false; return r;
+  });
+  state.drawerFrontIntake = (data.drawerFrontIntake || []).map(function(r) {
+    r._isNew = false; r._isDirty = false; return r;
+  });
+  state.drawerBoxUnit = data.drawerBoxUnit || {};
+  state._deletedRows = { drawerIntake: [], doorIntake: [], drawerFrontIntake: [] };
+
+  // Update header
+  document.getElementById('quoteDisplay').textContent = state.quoteNumber ? 'Quote #' + state.quoteNumber : 'Quote #';
+  document.getElementById('customerDisplay').textContent = state.customerName;
+
+  renderAllGrids();
+  renderDrawerBoxUnit();
+  debugMsg('Data loaded: ' + state.drawerIntake.length + ' drawers, ' + state.doorIntake.length + ' doors, ' + state.drawerFrontIntake.length + ' fronts');
+}
+
+// FM calls this after creating a new row to send back the PK
+function receiveNewRow(jsonInput) {
+  var data = typeof jsonInput === 'string' ? JSON.parse(jsonInput) : jsonInput;
+  var row = state[data.table][data.tempIndex];
+  if (row) {
+    row._pk = data.pk;
+    row._isNew = false;
+    renderGrid(data.table);
+    debugMsg('Received PK ' + data.pk + ' for ' + data.table + '[' + data.tempIndex + ']');
+  }
+}
+
+// FM calls this to update the Drawer Box Unit display after recalc
+function updateDrawerBoxUnit(jsonInput) {
+  var data = typeof jsonInput === 'string' ? JSON.parse(jsonInput) : jsonInput;
+  state.drawerBoxUnit = data;
+  renderDrawerBoxUnit();
+  debugMsg('Drawer Box Unit updated');
+}
+
+// Call FM script
+function callFM(scriptName, param) {
+  if (typeof FileMaker !== 'undefined') {
+    FileMaker.PerformScript(scriptName, param || '');
+    debugMsg('Called FM script: ' + scriptName);
+  } else {
+    debugMsg('FM not available - would call: ' + scriptName);
+  }
+}
+
+
+// ============================================================
+// DEBUG
+// ============================================================
+function toggleDebug() {
+  document.getElementById('debugPanel').classList.toggle('visible');
+}
+function debugMsg(msg) {
+  var log = document.getElementById('debugLog');
+  var time = new Date().toLocaleTimeString();
+  log.textContent = '[' + time + '] ' + msg + '\n' + log.textContent;
+  if (typeof FileMaker === 'undefined') console.log('[Intake]', msg);
+}
+function showState() {
+  var log = document.getElementById('debugLog');
+  log.textContent = JSON.stringify(state, null, 2);
+}
+function clearAll() {
+  state.drawerIntake = [];
+  state.doorIntake = [];
+  state.drawerFrontIntake = [];
+  state.drawerBoxUnit = {};
+  renderAllGrids();
+  renderDrawerBoxUnit();
+  debugMsg('Cleared all data');
+}
+
+function loadSampleData() {
+  loadIntakeData({
+    quoteId: 3435,
+    quoteNumber: '3435',
+    customerName: 'Carlos Santiago',
+    drawerIntake: [
+      { _pk: 4203, __fk_Quotes: 3435, __fk_LineItemID: null, Quantity: 2, Width: 33.5, Length: 22, Height: 5 },
+      { _pk: 4204, __fk_Quotes: 3435, __fk_LineItemID: null, Quantity: 2, Width: 21.5, Length: 22, Height: 5 },
+      { _pk: 4205, __fk_Quotes: 3435, __fk_LineItemID: null, Quantity: 2, Width: 27.5, Length: 22, Height: 5 },
+      { _pk: 4206, __fk_Quotes: 3435, __fk_LineItemID: 901, Quantity: 6, Width: 21.5, Length: 28, Height: 6 },
+      { _pk: 4207, __fk_Quotes: 3435, __fk_LineItemID: null, Quantity: 1, Width: 21.5, Length: 22, Height: 4 },
+      { _pk: 4208, __fk_Quotes: 3435, __fk_LineItemID: null, Quantity: 1, Width: 33.5, Length: 22, Height: 4 },
+      { _pk: 4209, __fk_Quotes: 3435, __fk_LineItemID: null, Quantity: 1, Width: 27.5, Length: 22, Height: 4 }
+    ],
+    doorIntake: [],
+    drawerFrontIntake: [],
+    drawerBoxUnit: {
+      OuterBox_Width: 24,
+      OuterBox_Length: 21,
+      OuterBox_Height: 7,
+      MaterialThickness: 0.5625,
+      Reveal: 0.125,
+      BackOffset: 0,
+      BackThickness: 0.25,
+      DrawerLengthClearance: 1,
+      Drawer_Width: 22.375,
+      Drawer_Length: 20,
+      Drawer_Height: 6,
+      DrawerSlideMotion: 'Full Extension',
+      NumberOfDrawers: 3,
+      DrawerFrontStyle: 'Flat Panel',
+      DrawerFront_Width: 24,
+      DrawerFront_AutoEach: 2.25,
+      DrawerFront_Height_Top: 2.5,
+      SlideWidth: 0.5,
+      Drawer1_ManualHeight: 0,
+      Drawer2_ManualHeight: 0,
+      Drawer3_ManualHeight: 0,
+      Drawer4_ManualHeight: 0,
+      Drawer5_ManualHeight: 0,
+      Drawer1Front_ManualHeight: 0,
+      Drawer2Front_ManualHeight: 0,
+      Drawer3Front_ManualHeight: 0,
+      Drawer4Front_ManualHeight: 0,
+      Drawer5Front_ManualHeight: 0
+    }
+  });
+}
+
+
+// ============================================================
+// INIT
+// ============================================================
+(function() {
+  // Date display
+  var d = new Date();
+  document.getElementById('dateDisplay').textContent =
+    (d.getMonth() + 1) + '/' + d.getDate() + '/' + d.getFullYear();
+
+  // Keyboard shortcut for debug panel
+  document.addEventListener('keydown', function(e) {
+    if (e.ctrlKey && e.key === 'd') { e.preventDefault(); toggleDebug(); }
+  });
+
+  // If no FileMaker, show debug panel hint
+  if (typeof FileMaker === 'undefined') {
+    debugMsg('FileMaker not detected - running in standalone mode. Press Ctrl+D for debug panel.');
+  }
+
+  renderAllGrids();
+})();
+</script>
+</body>
+</html>
