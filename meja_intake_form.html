@@ -654,8 +654,8 @@ function handleFieldChange(e) {
   state[tableType][index]._isDirty = true;
 
   // Send to FM
-  if (typeof FileMaker !== 'undefined' && state[tableType][index]._pk) {
-    FileMaker.PerformScript('WebIntake_UpdateField', JSON.stringify({
+  if (state[tableType][index]._pk) {
+    callFM('WebIntake_UpdateField', JSON.stringify({
       table: tableType,
       pk: state[tableType][index]._pk,
       field: field,
@@ -685,13 +685,11 @@ function addRow(tableType) {
   renderGrid(tableType);
 
   // Tell FM to create a record
-  if (typeof FileMaker !== 'undefined') {
-    FileMaker.PerformScript('WebIntake_AddRow', JSON.stringify({
-      table: tableType,
-      quoteId: state.quoteId,
-      tempIndex: state[tableType].length - 1
-    }));
-  }
+  callFM('WebIntake_AddRow', JSON.stringify({
+    table: tableType,
+    quoteId: state.quoteId,
+    tempIndex: state[tableType].length - 1
+  }));
 
   debugMsg('Added row to ' + tableType);
 
@@ -714,12 +712,10 @@ function handleDelete(e) {
     var row = state[tableType][index];
     if (row._pk) {
       state._deletedRows[tableType].push(row._pk);
-      if (typeof FileMaker !== 'undefined') {
-        FileMaker.PerformScript('WebIntake_DeleteRow', JSON.stringify({
-          table: tableType,
-          pk: row._pk
-        }));
-      }
+      callFM('WebIntake_DeleteRow', JSON.stringify({
+        table: tableType,
+        pk: row._pk
+      }));
     }
     state[tableType].splice(index, 1);
     renderGrid(tableType);
@@ -895,26 +891,22 @@ function onInfoChange(field, value) {
   var custName = (state.customer.FirstName || '') + ' ' + (state.customer.LastName || '');
   document.getElementById('customerDisplay').textContent = custName.trim();
 
-  if (typeof FileMaker !== 'undefined') {
-    FileMaker.PerformScript('WebIntake_UpdateCustomer', JSON.stringify({
-      customerId: state.customerId,
-      field: field,
-      value: value
-    }));
-  }
+  callFM('WebIntake_UpdateCustomer', JSON.stringify({
+    customerId: state.customerId,
+    field: field,
+    value: value
+  }));
   debugMsg('Customer field: ' + field + ' = ' + value);
 }
 
 // Quote field change → send to FM
 function onQuoteChange(field, value) {
   state.quote[field] = value;
-  if (typeof FileMaker !== 'undefined') {
-    FileMaker.PerformScript('WebIntake_UpdateQuote', JSON.stringify({
-      quoteId: state.quoteId,
-      field: field,
-      value: value
-    }));
-  }
+  callFM('WebIntake_UpdateQuote', JSON.stringify({
+    quoteId: state.quoteId,
+    field: field,
+    value: value
+  }));
   debugMsg('Quote field: ' + field + ' = ' + value);
 }
 
@@ -939,10 +931,15 @@ function updateDrawerBoxUnit(jsonInput) {
 }
 
 // Call FM script
+// Safe wrapper for all FM calls
 function callFM(scriptName, param) {
   if (typeof FileMaker !== 'undefined') {
-    FileMaker.PerformScript(scriptName, param || '');
-    debugMsg('Called FM script: ' + scriptName);
+    try {
+      FileMaker.PerformScript(scriptName, param || '');
+      debugMsg('Called FM script: ' + scriptName);
+    } catch (e) {
+      debugMsg('FM script error (' + scriptName + '): ' + e.message);
+    }
   } else {
     debugMsg('FM not available - would call: ' + scriptName);
   }
