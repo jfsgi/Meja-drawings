@@ -178,6 +178,42 @@ body { font-family: 'Segoe UI', Arial, sans-serif; background: #f5f5f5; color: #
   cursor: pointer; font-size: 10px; margin: 2px; font-family: monospace;
 }
 
+/* Customer & Quote info bar */
+.info-bar {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 0;
+  background: #fff; border: 1px solid #ddd; border-radius: 6px;
+  margin-bottom: 12px; overflow: hidden;
+}
+.info-group {
+  padding: 12px 16px;
+}
+.info-group:first-child { border-right: 1px solid #eee; }
+.info-group h3 {
+  font-size: 10px; text-transform: uppercase; color: #888;
+  letter-spacing: 1px; margin-bottom: 8px; font-weight: 700;
+}
+.info-row {
+  display: flex; align-items: center; margin-bottom: 4px; gap: 8px;
+}
+.info-label {
+  font-size: 11px; color: #666; min-width: 55px; text-align: right; font-weight: 600;
+}
+.info-input {
+  flex: 1; padding: 4px 8px; border: 1px solid #ccc; border-radius: 3px;
+  font-size: 13px; font-family: inherit; background: #fff;
+  transition: border-color 0.2s;
+}
+.info-input:focus { outline: none; border-color: #1a1a2e; box-shadow: 0 0 0 2px rgba(26,26,46,0.15); }
+.info-input.readonly { background: #f8f8f8; color: #666; border-color: #e8e8e8; }
+.info-row-inline { display: flex; gap: 8px; flex: 1; }
+.info-row-inline .info-sub { display: flex; align-items: center; gap: 4px; flex: 1; }
+.info-row-inline .info-sub label { font-size: 11px; color: #666; font-weight: 600; white-space: nowrap; }
+.info-select {
+  padding: 4px 8px; border: 1px solid #ccc; border-radius: 3px;
+  font-size: 13px; font-family: inherit; background: #fff; flex: 1;
+}
+.info-select:focus { outline: none; border-color: #1a1a2e; }
+
 /* Print */
 @media print {
   .header { padding: 6px 12px; }
@@ -206,6 +242,86 @@ body { font-family: 'Segoe UI', Arial, sans-serif; background: #f5f5f5; color: #
 </div>
 
 <div class="content">
+
+  <!-- CUSTOMER & QUOTE INFO -->
+  <div class="info-bar">
+    <div class="info-group">
+      <h3>Customer</h3>
+      <div class="info-row">
+        <span class="info-label">Name</span>
+        <input type="text" class="info-input" id="custFirstName" placeholder="First" style="flex:1" onchange="onInfoChange('FirstName', this.value)">
+        <input type="text" class="info-input" id="custLastName" placeholder="Last" style="flex:1" onchange="onInfoChange('LastName', this.value)">
+      </div>
+      <div class="info-row">
+        <span class="info-label">Street</span>
+        <input type="text" class="info-input" id="custStreet" placeholder="Street Address" onchange="onInfoChange('StreetAddress', this.value)">
+      </div>
+      <div class="info-row">
+        <span class="info-label">City</span>
+        <div class="info-row-inline">
+          <input type="text" class="info-input" id="custCity" placeholder="City" style="flex:2" onchange="onInfoChange('City', this.value)">
+          <div class="info-sub">
+            <label>State</label>
+            <input type="text" class="info-input" id="custState" placeholder="ST" style="width:45px;flex:none;text-align:center" maxlength="2" onchange="onInfoChange('State', this.value)">
+          </div>
+          <div class="info-sub">
+            <label>Zip</label>
+            <input type="text" class="info-input" id="custZip" placeholder="Zip" style="width:70px;flex:none;text-align:center" onchange="onInfoChange('ZipCode', this.value)">
+          </div>
+        </div>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Phone</span>
+        <input type="tel" class="info-input" id="custPhone" placeholder="Phone Number" onchange="onInfoChange('PhoneNumber', this.value)">
+      </div>
+      <div class="info-row">
+        <span class="info-label">Email</span>
+        <input type="email" class="info-input" id="custEmail" placeholder="Email Address" onchange="onInfoChange('emailaddress', this.value)">
+      </div>
+    </div>
+    <div class="info-group">
+      <h3>Quote Details</h3>
+      <div class="info-row">
+        <span class="info-label">Quote #</span>
+        <input type="text" class="info-input readonly" id="infoQuoteNo" readonly>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Date</span>
+        <input type="date" class="info-input" id="infoDate" onchange="onQuoteChange('Date', this.value)">
+      </div>
+      <div class="info-row">
+        <span class="info-label">Source</span>
+        <select class="info-select" id="infoSource" onchange="onQuoteChange('Source', this.value)">
+          <option value="">-- Select --</option>
+          <option value="Etsy">Etsy</option>
+          <option value="Website">Website</option>
+          <option value="Phone">Phone</option>
+          <option value="Email">Email</option>
+          <option value="Referral">Referral</option>
+          <option value="Repeat">Repeat</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Status</span>
+        <select class="info-select" id="infoStatus" onchange="onQuoteChange('Status', this.value)">
+          <option value="">-- Select --</option>
+          <option value="New">New</option>
+          <option value="Quoted">Quoted</option>
+          <option value="Follow Up">Follow Up</option>
+          <option value="Accepted">Accepted</option>
+          <option value="In Production">In Production</option>
+          <option value="Shipped">Shipped</option>
+          <option value="Completed">Completed</option>
+          <option value="Cancelled">Cancelled</option>
+        </select>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Notes</span>
+        <input type="text" class="info-input" id="infoNotes" placeholder="Special notes..." onchange="onQuoteChange('SpecialNotes', this.value)">
+      </div>
+    </div>
+  </div>
 
   <!-- DRAWER INTAKE -->
   <div class="section-panel">
@@ -370,8 +486,10 @@ body { font-family: 'Segoe UI', Arial, sans-serif; background: #f5f5f5; color: #
 // ============================================================
 var state = {
   quoteId: null,
+  customerId: null,
   quoteNumber: '',
-  customerName: '',
+  customer: {},
+  quote: {},
   drawerIntake: [],
   doorIntake: [],
   drawerFrontIntake: [],
@@ -709,8 +827,10 @@ function loadIntakeData(jsonInput) {
   var data = typeof jsonInput === 'string' ? JSON.parse(jsonInput) : jsonInput;
 
   state.quoteId = data.quoteId || null;
+  state.customerId = data.customerId || null;
   state.quoteNumber = data.quoteNumber || '';
-  state.customerName = data.customerName || '';
+  state.customer = data.customer || {};
+  state.quote = data.quote || {};
   state.drawerIntake = (data.drawerIntake || []).map(function(r) {
     r._isNew = false; r._isDirty = false; return r;
   });
@@ -724,12 +844,77 @@ function loadIntakeData(jsonInput) {
   state._deletedRows = { drawerIntake: [], doorIntake: [], drawerFrontIntake: [] };
 
   // Update header
+  var custName = (state.customer.FirstName || '') + ' ' + (state.customer.LastName || '');
   document.getElementById('quoteDisplay').textContent = state.quoteNumber ? 'Quote #' + state.quoteNumber : 'Quote #';
-  document.getElementById('customerDisplay').textContent = state.customerName;
+  document.getElementById('customerDisplay').textContent = custName.trim();
+
+  // Populate customer fields
+  setInputVal('custFirstName', state.customer.FirstName);
+  setInputVal('custLastName', state.customer.LastName);
+  setInputVal('custStreet', state.customer.StreetAddress);
+  setInputVal('custCity', state.customer.City);
+  setInputVal('custState', state.customer.State);
+  setInputVal('custZip', state.customer.ZipCode);
+  setInputVal('custPhone', state.customer.PhoneNumber);
+  setInputVal('custEmail', state.customer.emailaddress);
+
+  // Populate quote fields
+  setInputVal('infoQuoteNo', state.quoteNumber);
+  setInputVal('infoDate', state.quote.Date);
+  setSelectVal('infoSource', state.quote.Source);
+  setSelectVal('infoStatus', state.quote.Status);
+  setInputVal('infoNotes', state.quote.SpecialNotes);
 
   renderAllGrids();
   renderDrawerBoxUnit();
   debugMsg('Data loaded: ' + state.drawerIntake.length + ' drawers, ' + state.doorIntake.length + ' doors, ' + state.drawerFrontIntake.length + ' fronts');
+}
+
+function setInputVal(id, val) {
+  var el = document.getElementById(id);
+  if (el) el.value = val || '';
+}
+function setSelectVal(id, val) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  el.value = val || '';
+  // If value doesn't match an option, add it
+  if (el.value !== (val || '') && val) {
+    var opt = document.createElement('option');
+    opt.value = val; opt.textContent = val;
+    el.appendChild(opt);
+    el.value = val;
+  }
+}
+
+// Customer field change → send to FM
+function onInfoChange(field, value) {
+  state.customer[field] = value;
+  // Update header name display
+  var custName = (state.customer.FirstName || '') + ' ' + (state.customer.LastName || '');
+  document.getElementById('customerDisplay').textContent = custName.trim();
+
+  if (typeof FileMaker !== 'undefined') {
+    FileMaker.PerformScript('WebIntake_UpdateCustomer', JSON.stringify({
+      customerId: state.customerId,
+      field: field,
+      value: value
+    }));
+  }
+  debugMsg('Customer field: ' + field + ' = ' + value);
+}
+
+// Quote field change → send to FM
+function onQuoteChange(field, value) {
+  state.quote[field] = value;
+  if (typeof FileMaker !== 'undefined') {
+    FileMaker.PerformScript('WebIntake_UpdateQuote', JSON.stringify({
+      quoteId: state.quoteId,
+      field: field,
+      value: value
+    }));
+  }
+  debugMsg('Quote field: ' + field + ' = ' + value);
 }
 
 // FM calls this after creating a new row to send back the PK
@@ -792,8 +977,24 @@ function clearAll() {
 function loadSampleData() {
   loadIntakeData({
     quoteId: 3435,
+    customerId: 1502,
     quoteNumber: '3435',
-    customerName: 'Carlos Santiago',
+    customer: {
+      FirstName: 'Carlos',
+      LastName: 'Santiago',
+      StreetAddress: '742 Maple Drive',
+      City: 'Austin',
+      State: 'TX',
+      ZipCode: '78701',
+      PhoneNumber: '(512) 555-0147',
+      emailaddress: 'carlos.santiago@email.com'
+    },
+    quote: {
+      Date: '2026-02-26',
+      Source: 'Etsy',
+      Status: 'New',
+      SpecialNotes: 'Kitchen remodel - maple drawer boxes'
+    },
     drawerIntake: [
       { _pk: 4203, __fk_Quotes: 3435, __fk_LineItemID: null, Quantity: 2, Width: 33.5, Length: 22, Height: 5 },
       { _pk: 4204, __fk_Quotes: 3435, __fk_LineItemID: null, Quantity: 2, Width: 21.5, Length: 22, Height: 5 },
